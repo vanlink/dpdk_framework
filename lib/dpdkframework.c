@@ -20,8 +20,10 @@ static int dpdk_eal_init(DKFW_CONFIG *config)
     strcpy(dpdk_argv[argc], "dkfw");
     argc++;
 
-    sprintf(dpdk_argv[argc], "--file-prefix=%s", config->nuique_name);
-    argc++;
+    if(config->nuique_name[0]){
+        sprintf(dpdk_argv[argc], "--file-prefix=%s", config->nuique_name);
+        argc++;
+    }
 
     sprintf(dpdk_argv[argc], "--proc-type=%s", config->process_type == PROCESS_TYPE_PRIMARY ? "primary" : "secondary");
     argc++;
