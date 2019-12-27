@@ -107,3 +107,8 @@ err:
     return -1;
 }
 
+void dkfw_exit(void)
+{
+    rte_eal_cleanup();
+}
+
