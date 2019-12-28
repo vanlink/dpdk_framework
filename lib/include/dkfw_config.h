@@ -1,6 +1,8 @@
 #ifndef _DPDK_FRAMEWORK_CONFIG_H
 #define _DPDK_FRAMEWORK_CONFIG_H
 
+#include <rte_launch.h>
+
 enum {
     CORE_ROLE_PKT_PROCESS,
     CORE_ROLE_PKT_DISPATCH,
@@ -17,6 +19,8 @@ typedef struct _CORE_CONFIG_TAG {
     int core_ind;
     int core_role;
     int core_is_me;
+    
+    lcore_function_t *core_func_raw;
 } CORE_CONFIG;
 
 typedef struct _PCI_CONFIG_TAG {

@@ -11,7 +11,7 @@
 static char dpdk_argv[64][64];
 static char *argv_in[64];
 
-static int dpdk_eal_init(DKFW_CONFIG *config)
+static int eal_init(DKFW_CONFIG *config)
 {
     int i, ret = 0;
     int argc = 0;
@@ -31,6 +31,20 @@ static int dpdk_eal_init(DKFW_CONFIG *config)
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         if(config->cores_pkt_process[i].core_enabled && config->cores_pkt_process[i].core_is_me){
             my_core_ind = config->cores_pkt_process[i].core_ind;
+            break;
+        }
+    }
+
+    for(i=0;i<MAX_CORES_PER_ROLE;i++){
+        if(config->cores_pkt_dispatch[i].core_enabled && config->cores_pkt_dispatch[i].core_is_me){
+            my_core_ind = config->cores_pkt_dispatch[i].core_ind;
+            break;
+        }
+    }
+
+    for(i=0;i<MAX_CORES_PER_ROLE;i++){
+        if(config->cores_other[i].core_enabled && config->cores_other[i].core_is_me){
+            my_core_ind = config->cores_other[i].core_ind;
             break;
         }
     }
@@ -89,15 +103,15 @@ int dkfw_init(DKFW_CONFIG *config)
         }
     }
 
-    if(dpdk_eal_init(config) < 0){
+    if(eal_init(config) < 0){
         goto err;
     }
 
-    if(gkfw_interfaces_init(config->cores_pkt_process_num, config->cores_pkt_dispatch_num) < 0){
+    if(interfaces_init(config->cores_pkt_process_num, config->cores_pkt_dispatch_num) < 0){
         goto err;
     }
 
-    if(gkfw_cores_init(config) < 0){
+    if(cores_init(config) < 0){
         goto err;
     }
 
@@ -113,4 +127,6 @@ void dkfw_exit(void)
 {
     rte_eal_cleanup();
 }
+
+
 

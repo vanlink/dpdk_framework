@@ -21,7 +21,9 @@ static DKFW_CORE g_pkt_distribute_core[MAX_CORES_PER_ROLE];
 static int g_other_core_num = 0;
 static DKFW_CORE g_other_core[MAX_CORES_PER_ROLE];
 
-static int gkfw_process_core_init_one(DKFW_CORE *core, int to_me_q_num)
+static DKFW_CORE *g_core_me = NULL;
+
+static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
 {
     int i;
     char buff[128];
@@ -37,7 +39,7 @@ static int gkfw_process_core_init_one(DKFW_CORE *core, int to_me_q_num)
             core->pkts_to_me_q[i] = rte_ring_lookup(buff);
         }
         if(!core->pkts_to_me_q[i]){
-            printf("gkfw_process_core_init_one %s err.\n", buff);
+            printf("process_core_init_one %s err.\n", buff);
             return -1;
         }
     }
@@ -45,7 +47,7 @@ static int gkfw_process_core_init_one(DKFW_CORE *core, int to_me_q_num)
     return 0;
 }
 
-int gkfw_cores_init(DKFW_CONFIG *config)
+int cores_init(DKFW_CONFIG *config)
 {
     int i;
     CORE_CONFIG *core_config_curr;
@@ -65,6 +67,11 @@ int gkfw_cores_init(DKFW_CONFIG *config)
         core_curr->core_seq = i;
         core_curr->core_ind = core_config_curr->core_ind;
         core_curr->core_role = core_config_curr->core_role;
+        core_curr->core_is_me = core_config_curr->core_is_me;
+        if(core_curr->core_is_me){
+            g_core_me = core_curr;
+        }
+        core_curr->core_func_raw = core_config_curr->core_func_raw;
     }
     printf("We have process cores: %d\n", g_pkt_process_core_num);
 
@@ -78,6 +85,11 @@ int gkfw_cores_init(DKFW_CONFIG *config)
         core_curr->core_seq = i;
         core_curr->core_ind = core_config_curr->core_ind;
         core_curr->core_role = core_config_curr->core_role;
+        core_curr->core_is_me = core_config_curr->core_is_me;
+        if(core_curr->core_is_me){
+            g_core_me = core_curr;
+        }
+        core_curr->core_func_raw = core_config_curr->core_func_raw;
     }
     printf("We have distribute cores: %d\n", g_pkt_distribute_core_num);
 
@@ -91,11 +103,21 @@ int gkfw_cores_init(DKFW_CONFIG *config)
         core_curr->core_seq = i;
         core_curr->core_ind = core_config_curr->core_ind;
         core_curr->core_role = core_config_curr->core_role;
+        core_curr->core_is_me = core_config_curr->core_is_me;
+        if(core_curr->core_is_me){
+            g_core_me = core_curr;
+        }
+        core_curr->core_func_raw = core_config_curr->core_func_raw;
     }
     printf("We have other cores: %d\n", g_other_core_num);
 
+    if(!g_core_me){
+        printf("Failed to find me core.\n");
+        return -1;
+    }
+
     for(i=0;i<g_pkt_process_core_num;i++){
-        if(gkfw_process_core_init_one(&g_pkt_process_core[i], g_pkt_distribute_core_num) < 0){
+        if(process_core_init_one(&g_pkt_process_core[i], g_pkt_distribute_core_num) < 0){
             return -1;
         }
     }
@@ -103,4 +125,15 @@ int gkfw_cores_init(DKFW_CONFIG *config)
     return 0;
 }
 
+int dkfw_start_loop_raw(void *loop_arg)
+{
+    if(!g_core_me->core_func_raw){
+        return -1;
+    }
+
+    rte_eal_mp_remote_launch(g_core_me->core_func_raw, loop_arg, CALL_MASTER);
+    rte_eal_mp_wait_lcore();
+
+    return 0;
+}
 

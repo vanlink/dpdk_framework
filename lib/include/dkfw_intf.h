@@ -11,7 +11,7 @@ typedef struct _DKFW_INTF_TAG {
     int nic_type;
 } DKFW_INTF;
 
-extern int gkfw_interfaces_init(int txq_num, int rxq_num);
+extern int interfaces_init(int txq_num, int rxq_num);
 
 #endif
 

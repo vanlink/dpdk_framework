@@ -12,8 +12,8 @@
 
 #include "dkfw_intf.h"
 
-static DKFW_INTF g_gkfw_interfaces[MAX_INTERFACE_NUM];
-static int g_gkfw_interfaces_num;
+static DKFW_INTF g_dkfw_interfaces[MAX_INTERFACE_NUM];
+static int g_dkfw_interfaces_num;
 
 static void check_port_link_status(int port_ind)
 {
@@ -38,7 +38,7 @@ static void check_port_link_status(int port_ind)
     printf("Port Link Down\n");
 }
 
-static int gkfw_interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
+static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
 {
     int ret, i;
     struct rte_eth_dev_info dev_info;
@@ -185,24 +185,24 @@ static int gkfw_interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_n
     return 0;
 }
 
-int gkfw_interfaces_init(int txq_num, int rxq_num)
+int interfaces_init(int txq_num, int rxq_num)
 {
     int i;
     
-    g_gkfw_interfaces_num = rte_eth_dev_count_avail();
+    g_dkfw_interfaces_num = rte_eth_dev_count_avail();
 
-    printf("We have %d interfaces.\n", g_gkfw_interfaces_num);
+    printf("We have %d interfaces.\n", g_dkfw_interfaces_num);
     printf("Init each intf txq=%d rxq=%d.\n", txq_num, rxq_num);
     
-    if(g_gkfw_interfaces_num < 1 || g_gkfw_interfaces_num > MAX_INTERFACE_NUM){
+    if(g_dkfw_interfaces_num < 1 || g_dkfw_interfaces_num > MAX_INTERFACE_NUM){
         return -1;
     }
 
-    memset(g_gkfw_interfaces, 0, sizeof(g_gkfw_interfaces));
+    memset(g_dkfw_interfaces, 0, sizeof(g_dkfw_interfaces));
 
-    for(i=0;i<g_gkfw_interfaces_num;i++){
-        g_gkfw_interfaces[i].intf_ind = i;
-        if(gkfw_interfaces_init_one(&g_gkfw_interfaces[i], txq_num, rxq_num) < 0){
+    for(i=0;i<g_dkfw_interfaces_num;i++){
+        g_dkfw_interfaces[i].intf_ind = i;
+        if(interfaces_init_one(&g_dkfw_interfaces[i], txq_num, rxq_num) < 0){
             return -1;
         }
     }
