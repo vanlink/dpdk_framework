@@ -12,13 +12,13 @@
 
 #include "dkfw_core.h"
 
-static int g_pkt_process_core_num = 0;
+int g_pkt_process_core_num = 0;
 static DKFW_CORE g_pkt_process_core[MAX_CORES_PER_ROLE];
 
-static int g_pkt_distribute_core_num = 0;
+int g_pkt_distribute_core_num = 0;
 static DKFW_CORE g_pkt_distribute_core[MAX_CORES_PER_ROLE];
 
-static int g_other_core_num = 0;
+int g_other_core_num = 0;
 static DKFW_CORE g_other_core[MAX_CORES_PER_ROLE];
 
 static DKFW_CORE *g_core_me = NULL;
@@ -34,11 +34,11 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
     for(i=0;i<to_me_q_num;i++){
         snprintf(buff, sizeof(buff), "pctome%d-%d", core->core_ind, i);
         if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-            core->pkts_to_me_q[i] = rte_ring_create(buff, 2048, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
+            core->pkts_to_me_q[i].dkfw_ring = rte_ring_create(buff, 2048, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
         } else {
-            core->pkts_to_me_q[i] = rte_ring_lookup(buff);
+            core->pkts_to_me_q[i].dkfw_ring = rte_ring_lookup(buff);
         }
-        if(!core->pkts_to_me_q[i]){
+        if(!core->pkts_to_me_q[i].dkfw_ring){
             printf("process_core_init_one %s err.\n", buff);
             return -1;
         }
@@ -133,6 +133,20 @@ int dkfw_start_loop_raw(void *loop_arg)
 
     rte_eal_mp_remote_launch(g_core_me->core_func_raw, loop_arg, CALL_MASTER);
     rte_eal_mp_wait_lcore();
+
+    return 0;
+}
+
+int dkfw_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf)
+{
+    DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
+
+    if(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) < 0){
+        ring->stats_enq_err_cnt++;
+        return -1;
+    }
+
+    ring->stats_enq_cnt++;
 
     return 0;
 }

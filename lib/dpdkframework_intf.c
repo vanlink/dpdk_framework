@@ -13,7 +13,7 @@
 #include "dkfw_intf.h"
 
 static DKFW_INTF g_dkfw_interfaces[MAX_INTERFACE_NUM];
-static int g_dkfw_interfaces_num;
+int g_dkfw_interfaces_num;
 
 static void check_port_link_status(int port_ind)
 {
@@ -24,7 +24,7 @@ static void check_port_link_status(int port_ind)
 
     for(i=0;i<10;i++){
         
-        rte_delay_ms(100);
+        rte_delay_ms(1000);
         
         memset(&link, 0, sizeof(link));
         rte_eth_link_get_nowait(port_ind, &link);
@@ -112,8 +112,8 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
         port_conf.rx_adv_conf.rss_conf.rss_hf = (ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP) & dev_info.flow_type_rss_offloads;
     }
 
-    // rte_eth_promiscuous_enable(port_ind);
-    // rte_eth_allmulticast_enable(port_ind);
+    rte_eth_promiscuous_enable(port_ind);
+    rte_eth_allmulticast_enable(port_ind);
 
     ret = rte_eth_dev_configure(port_ind, rxq_num, txq_num, &port_conf);
     if (ret) {
@@ -208,5 +208,15 @@ int interfaces_init(int txq_num, int rxq_num)
     }
 
     return 0;
+}
+
+int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_burst, int max_pkts_num)
+{
+    int rx;
+    
+    rx = rte_eth_rx_burst(intf_seq, q_num, pkts_burst, max_pkts_num);
+    g_dkfw_interfaces[intf_seq].stats_rcv_pkts_cnt[q_num] += rx;
+
+    return rx;
 }
 

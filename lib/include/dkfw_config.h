@@ -16,6 +16,7 @@ enum {
 
 typedef struct _CORE_CONFIG_TAG {
     int core_enabled;
+    int core_seq;
     int core_ind;
     int core_role;
     int core_is_me;
