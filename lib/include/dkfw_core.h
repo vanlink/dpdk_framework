@@ -9,6 +9,8 @@ typedef struct _DKFW_RING_TAG {
     
     unsigned long long stats_enq_cnt;
     unsigned long long stats_enq_err_cnt;
+
+    unsigned long long stats_deq_cnt;
 } DKFW_RING;
 
 typedef struct _DKFW_CORE_TAG {
@@ -24,7 +26,8 @@ typedef struct _DKFW_CORE_TAG {
 } DKFW_CORE;
 
 extern int cores_init(DKFW_CONFIG *config);
-extern int dkfw_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf);
+extern int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf);
+extern int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf **pkts_burst, int max_pkts_num);
 
 #endif
 

@@ -137,7 +137,7 @@ int dkfw_start_loop_raw(void *loop_arg)
     return 0;
 }
 
-int dkfw_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf)
+int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf)
 {
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
 
@@ -150,4 +150,15 @@ int dkfw_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_
 
     return 0;
 }
+
+int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf **pkts_burst, int max_pkts_num)
+{
+    DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
+    int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
+
+    ring->stats_deq_cnt += nb_rx;
+
+    return nb_rx;
+}
+
 
