@@ -108,20 +108,6 @@ struct rte_ring *ipc_create_or_lookup_ring(int core_role, int core_seq, int ring
     return ring;
 }
 
-DKFW_IPC_MSG *dkfw_ipc_rcv_msg(struct rte_ring *ring)
-{
-    void *msg;
-    int ret;
-
-    if(likely(rte_ring_empty(ring))){
-        return NULL;
-    }
-
-    ret = rte_ring_dequeue(ring, &msg);
-
-    return ret ? NULL : (DKFW_IPC_MSG *)msg;
-}
-
 int init_ipc_msg_pool(int num)
 {
     struct rte_mempool *tgipc_message_pool;

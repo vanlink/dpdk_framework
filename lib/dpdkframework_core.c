@@ -214,4 +214,17 @@ int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struc
     return nb_rx;
 }
 
+DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void)
+{
+    void *msg;
+    int ret;
+
+    if(likely(rte_ring_empty(g_core_me->ipc_to_me))){
+        return NULL;
+    }
+
+    ret = rte_ring_dequeue(g_core_me->ipc_to_me, &msg);
+
+    return ret ? NULL : (DKFW_IPC_MSG *)msg;
+}
 

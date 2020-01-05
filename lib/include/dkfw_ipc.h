@@ -19,7 +19,7 @@ typedef struct _DKFW_IPC_MSG_TAG {
 
 extern int dkfw_ipc_client_init(char *nuique_name);
 extern void dkfw_ipc_client_exit(void);
-extern DKFW_IPC_MSG *dkfw_ipc_rcv_msg(struct rte_ring *ring);
+extern DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void);
 extern DKFW_IPC_MSG *dkfw_ipc_msg_alloc(void);
 extern void dkfw_ipc_msg_free(DKFW_IPC_MSG *msg);
 extern int dkfw_ipc_client_send_msg_to_core(int core_role, int core_seq, DKFW_IPC_MSG *msg);
