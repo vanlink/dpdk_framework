@@ -11,6 +11,7 @@
 #include <rte_mbuf.h>
 
 #include "dkfw_core.h"
+#include "dkfw_ipc.h"
 
 int g_pkt_process_core_num = 0;
 static DKFW_CORE g_pkt_process_core[MAX_CORES_PER_ROLE];
@@ -22,6 +23,24 @@ int g_other_core_num = 0;
 static DKFW_CORE g_other_core[MAX_CORES_PER_ROLE];
 
 static DKFW_CORE *g_core_me = NULL;
+
+extern struct rte_ring *ipc_create_or_lookup_ring(int core_role, int core_seq, int ring_type);
+
+static int core_init_ipc_rings(DKFW_CORE *core)
+{
+    core->ipc_to_me = ipc_create_or_lookup_ring(core->core_role, core->core_seq, IPC_TO_CORE_RING);
+    if(!core->ipc_to_me){
+        printf("init ipc ring err.\n");
+        return -1;
+    }
+    core->ipc_to_back = ipc_create_or_lookup_ring(core->core_role, core->core_seq, IPC_TO_BACK_RING);
+    if(!core->ipc_to_back){
+        printf("init ipc back ring err.\n");
+        return -1;
+    }
+
+    return 0;
+}
 
 static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
 {
@@ -42,6 +61,28 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
             printf("process_core_init_one %s err.\n", buff);
             return -1;
         }
+    }
+
+    if(core_init_ipc_rings(core) < 0){
+        return -1;
+    }
+
+    return 0;
+}
+
+static int dispatch_core_init_one(DKFW_CORE *core)
+{
+    if(core_init_ipc_rings(core) < 0){
+        return -1;
+    }
+    
+    return 0;
+}
+
+static int other_core_init_one(DKFW_CORE *core)
+{
+    if(core_init_ipc_rings(core) < 0){
+        return -1;
     }
     
     return 0;
@@ -118,6 +159,18 @@ int cores_init(DKFW_CONFIG *config)
 
     for(i=0;i<g_pkt_process_core_num;i++){
         if(process_core_init_one(&g_pkt_process_core[i], g_pkt_distribute_core_num) < 0){
+            return -1;
+        }
+    }
+
+    for(i=0;i<g_pkt_distribute_core_num;i++){
+        if(dispatch_core_init_one(&g_pkt_distribute_core[i]) < 0){
+            return -1;
+        }
+    }
+
+    for(i=0;i<g_other_core_num;i++){
+        if(other_core_init_one(&g_other_core[i]) < 0){
             return -1;
         }
     }

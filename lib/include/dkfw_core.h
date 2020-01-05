@@ -23,6 +23,9 @@ typedef struct _DKFW_CORE_TAG {
     DKFW_RING pkts_to_me_q[MAX_CORES_PER_ROLE];
 
     lcore_function_t *core_func_raw;
+
+    struct rte_ring *ipc_to_me;
+    struct rte_ring *ipc_to_back;
 } DKFW_CORE;
 
 extern int cores_init(DKFW_CONFIG *config);

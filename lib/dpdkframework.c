@@ -11,6 +11,8 @@
 static char dpdk_argv[64][64];
 static char *argv_in[64];
 
+extern int init_ipc_msg_pool(int num);
+
 static int eal_init(DKFW_CONFIG *config)
 {
     int i, ret = 0;
@@ -130,6 +132,10 @@ int dkfw_init(DKFW_CONFIG *config)
     }
 
     if(cores_init(config) < 0){
+        goto err;
+    }
+
+    if(init_ipc_msg_pool(256) < 0){
         goto err;
     }
 
