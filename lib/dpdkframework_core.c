@@ -228,3 +228,8 @@ DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void)
     return ret ? NULL : (DKFW_IPC_MSG *)msg;
 }
 
+int dkfw_ipc_send_response_msg(DKFW_IPC_MSG *msg)
+{
+    return rte_ring_enqueue(g_core_me->ipc_to_back, msg);
+}
+
