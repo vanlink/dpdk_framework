@@ -35,6 +35,9 @@ int dkfw_ipc_client_init(char *nuique_name)
     sprintf(dpdk_argv[argc], "--proc-type=secondary");
     argc++;
 
+    sprintf(dpdk_argv[argc], "--log-level=2");
+    argc++;
+
 /*
     strcpy(dpdk_argv[argc], "-l");
     argc++;
@@ -100,7 +103,7 @@ struct rte_ring *ipc_create_or_lookup_ring(int core_role, int core_seq, int ring
     get_ipc_ring_name(core_role, core_seq, ring_type, name);
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-        ring = rte_ring_create(name, 1, SOCKET_ID_ANY, 0);
+        ring = rte_ring_create(name, 16, SOCKET_ID_ANY, 0);
     } else {
         ring = rte_ring_lookup(name);
     }
