@@ -7,6 +7,7 @@ enum {
     CORE_ROLE_PKT_PROCESS,
     CORE_ROLE_PKT_DISPATCH,
     CORE_ROLE_OTHER,
+    CORE_ROLE_MAX,
 };
 
 enum {

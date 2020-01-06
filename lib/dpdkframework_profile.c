@@ -41,6 +41,19 @@ DKFW_PROFILE *dkfw_profile_get(void)
     return &g_profile;
 }
 
+void dkfw_profile_result_get(DKFW_PROFILE *dst)
+{
+    int i;
+        
+    dst->item_cnt = g_profile.item_cnt;
+    dst->loops_cnt = g_profile.loops_cnt;
+    dst->all_time = g_profile.all_time;
+
+    for(i=0;i<g_profile.item_cnt;i++){
+        dst->items_time[i] = g_profile.items_time[i];
+    }
+}
+
 void dkfw_profile_snapshot(DKFW_PROFILE *old)
 {
     memcpy(old, &g_profile, sizeof(g_profile));

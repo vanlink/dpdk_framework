@@ -24,6 +24,6 @@ extern void dkfw_profile_item_end(uint64_t t, int i);
 extern DKFW_PROFILE *dkfw_profile_get(void);
 extern void dkfw_profile_snapshot(DKFW_PROFILE *old);
 extern DKFW_PROFILE *dkfw_profile_calc(DKFW_PROFILE *snap);
-
+extern void dkfw_profile_result_get(DKFW_PROFILE *dst);
 #endif
 
