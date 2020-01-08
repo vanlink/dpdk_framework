@@ -72,6 +72,9 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
         return 0;
     }
 
+    i = rte_eth_dev_socket_id(port_ind);
+    printf("interface %d is on socket %d.\n", port_ind, i);
+
     rte_eth_dev_set_link_down(port_ind);
     // rte_eth_dev_stop(port_ind);
 
