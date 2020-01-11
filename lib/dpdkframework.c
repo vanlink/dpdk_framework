@@ -98,6 +98,7 @@ int dkfw_init(DKFW_CONFIG *config)
         if(config->cores_pkt_process[i].core_enabled){
             config->cores_pkt_process_num++;
             config->cores_pkt_process[i].core_seq = i;
+            config->cores_pkt_process[i].core_role = CORE_ROLE_PKT_PROCESS;
         }else{
             break;
         }
@@ -108,6 +109,7 @@ int dkfw_init(DKFW_CONFIG *config)
         if(config->cores_pkt_dispatch[i].core_enabled){
             config->cores_pkt_dispatch_num++;
             config->cores_pkt_dispatch[i].core_seq = i;
+            config->cores_pkt_dispatch[i].core_role = CORE_ROLE_PKT_DISPATCH;
         }else{
             break;
         }
@@ -118,6 +120,7 @@ int dkfw_init(DKFW_CONFIG *config)
         if(config->cores_other[i].core_enabled){
             config->cores_other_num++;
             config->cores_other[i].core_seq = i;
+            config->cores_other[i].core_role = CORE_ROLE_OTHER;
         }else{
             break;
         }

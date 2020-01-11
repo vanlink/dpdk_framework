@@ -9,14 +9,15 @@
 #include "dkfw_ipc.h"
 #include "dpdkframework.h"
 
+extern void distribute_loop(void);
+
 static int core_func(void *arg)
 {
 
     printf("----- dpdk core_func starts -----\n");
     fflush(stdout);
     
-    while(1){
-    }
+    distribute_loop();
 
     return 0;
 }
@@ -28,16 +29,16 @@ int main(int argc, char **argv)
 {
     memset(&dkfw_config, 0, sizeof(dkfw_config));
 
-    dkfw_config.process_type = PROCESS_TYPE_PRIMARY;
+    dkfw_config.process_type = PROCESS_TYPE_SECONDARY;
 
     dkfw_config.cores_pkt_process[0].core_enabled = 1;
     dkfw_config.cores_pkt_process[0].core_ind = 35;
-    dkfw_config.cores_pkt_process[0].core_is_me = 1;
-    dkfw_config.cores_pkt_process[0].core_func_raw = core_func;
-    dkfw_core_me = &dkfw_config.cores_pkt_process[0];
     
     dkfw_config.cores_pkt_dispatch[0].core_enabled = 1;
     dkfw_config.cores_pkt_dispatch[0].core_ind = 36;
+    dkfw_config.cores_pkt_dispatch[0].core_is_me = 1;
+    dkfw_config.cores_pkt_dispatch[0].core_func_raw = core_func;
+    dkfw_core_me = &dkfw_config.cores_pkt_dispatch[0];
 
     strcpy(dkfw_config.pcis_config[0].pci_name, "0000:01:00.0");
     
