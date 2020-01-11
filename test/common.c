@@ -139,3 +139,39 @@ void distribute_loop(void)
 
 }
 
+void app_loop(void)
+{
+    int i, j;
+    int rx_num;
+    int core_seq = dkfw_core_me->core_seq;
+    struct rte_mbuf *pkts_burst[MAX_RCV_PKTS];
+    struct rte_mbuf *pkt;
+    uint64_t elapsed_ms, elapsed_ms_last = 0;
+
+    tsc_per_sec = rte_get_tsc_hz();
+
+    while(1){
+        elapsed_ms = rte_rdtsc() * 1000ULL / tsc_per_sec;
+        
+        if(elapsed_ms != elapsed_ms_last){
+            ms_timer(elapsed_ms);
+            elapsed_ms_last = elapsed_ms;
+        }
+
+        for(i=0;i<g_pkt_distribute_core_num;i++){
+            rx_num = dkfw_rcv_pkt_from_process_core_q(core_seq, i, pkts_burst, MAX_RCV_PKTS);
+            if(!rx_num){
+                continue;
+            }
+            for(j=0;j<rx_num;j++){
+                pkt = pkts_burst[j];
+                stats_pkt_rcv_cnt++;
+                stats_pkt_rcv_bytes += rte_pktmbuf_pkt_len(pkt);
+                rte_pktmbuf_free(pkt);
+            }
+        }
+    }
+
+}
+
+

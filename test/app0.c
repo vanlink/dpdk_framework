@@ -9,17 +9,19 @@
 #include "dkfw_ipc.h"
 #include "dpdkframework.h"
 
+extern void app_loop(void);
+
 static int core_func(void *arg)
 {
 
     printf("----- dpdk core_func starts -----\n");
     fflush(stdout);
     
-    while(1){
-    }
+    app_loop();
 
     return 0;
 }
+
 
 static DKFW_CONFIG dkfw_config;
 CORE_CONFIG *dkfw_core_me = NULL;
