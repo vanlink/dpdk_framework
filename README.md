@@ -8,7 +8,7 @@
 
 # 编译安装
 ## 基础环境
-linux操作系统，gcc/make等基础编译环境，的安装略。
+linux操作系统，gcc/make等基础编译环境安装。
 ## 安装DPDK
 按照dpdk官方文档提供的方式编译即可。编译完成后注意以下事项：
 
@@ -23,9 +23,11 @@ python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.0
 python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.1
 ```
  - 预留hugepage
+ 
  方法参考dpdk官方介绍
  
  - 预留dpdk专用核心
+ 
  修改grub，方法参考dpdk官方介绍
  
 ## 编译工具库
@@ -71,7 +73,9 @@ make
 此为dpdk主进程，必须先运行
 
 等待输出“----- dpdk core_func starts -----”，启动成功
+
 - 运行./test-app1和./test-distr0
+
 等待输出“----- dpdk core_func starts -----”，启动成功
 
 以上进程会定期输出本进程的统计信息：
@@ -79,6 +83,7 @@ make
 pkts:累计收包数   pps:每秒收包数    bits:累计接收比特数    bps::接收比特数每秒
 
 - 控制测试仪开始发包
+
 观察测试仪和各进程统计数据
 
 查看测试仪统计数据（在测试仪端查看，单位为“每秒”）：
