@@ -82,7 +82,7 @@ static void do_stat(uint64_t ms)
     stats_pkt_rcv_bytes_last = stats_pkt_rcv_bytes;
     stats_ms_last = ms;
 
-    printf("pkts:%-10llu pps:%-10llu bits:%-10llu bps:%-10llu\n", 
+    printf("pkts:%-12llu pps:%-12llu bits:%-15llu bps:%-15llu\n", 
         pkts_now,
         interval ? ((pkts_now - pkts_last) * 1000 / interval) : 0,
         bits_now,

@@ -33,9 +33,12 @@ int main(int argc, char **argv)
 
     dkfw_config.cores_pkt_process[0].core_enabled = 1;
     dkfw_config.cores_pkt_process[0].core_ind = 35;
-    
+
+    dkfw_config.cores_pkt_process[1].core_enabled = 1;
+    dkfw_config.cores_pkt_process[1].core_ind = 36;
+
     dkfw_config.cores_pkt_dispatch[0].core_enabled = 1;
-    dkfw_config.cores_pkt_dispatch[0].core_ind = 36;
+    dkfw_config.cores_pkt_dispatch[0].core_ind = 37;
     dkfw_config.cores_pkt_dispatch[0].core_is_me = 1;
     dkfw_config.cores_pkt_dispatch[0].core_func_raw = core_func;
     dkfw_core_me = &dkfw_config.cores_pkt_dispatch[0];
