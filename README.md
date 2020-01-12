@@ -9,6 +9,7 @@
 # 编译安装
 ## 安装DPDK
 按照dpdk官方文档提供的方式正常安装即可
+
 安装后设置好dpdk相关的环境变量，例如：
 ```shell
 export RTE_SDK=/usr/src/dpdk-19.11
@@ -32,6 +33,7 @@ make
 - 设置环境变量
 
 设置环境变量为此lib目录，为编译测试程序或其他使用该库的程序做准备。
+
 例如：
 ```shell
 export DKFW_SDK=/usr/src/dpdk_framework/lib
