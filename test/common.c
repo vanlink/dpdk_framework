@@ -174,4 +174,57 @@ void app_loop(void)
 
 }
 
+void mix_loop(void)
+{
+    int i, j;
+    int rx_num;
+    int core_seq = dkfw_core_me->core_seq;
+    int intf_rcvq_seq = dkfw_core_me->core_seq;
+    int dst_core_seq;
+    struct rte_mbuf *pkts_burst[MAX_RCV_PKTS];
+    struct rte_mbuf *pkt;
+    uint64_t elapsed_ms, elapsed_ms_last = 0;
+
+    tsc_per_sec = rte_get_tsc_hz();
+
+    while(1){
+        elapsed_ms = rte_rdtsc() * 1000ULL / tsc_per_sec;
+        
+        if(elapsed_ms != elapsed_ms_last){
+            ms_timer(elapsed_ms);
+            elapsed_ms_last = elapsed_ms;
+        }
+
+        for(i=0;i<g_dkfw_interfaces_num;i++){
+            rx_num = dkfw_rcv_pkt_from_interface(i, intf_rcvq_seq, pkts_burst, MAX_RCV_PKTS);
+            if(rx_num){
+                for(j=0;j<rx_num;j++){
+                    pkt = pkts_burst[j];
+
+                    dst_core_seq = get_app_core_seq(pkt, g_pkt_process_core_num);
+                    if(likely(dst_core_seq >= 0)){
+                        dkfw_send_pkt_to_process_core_q(dst_core_seq, intf_rcvq_seq, pkt);
+                    }else{
+                        rte_pktmbuf_free(pkt);
+                    }
+                }
+            }
+        }
+
+        for(i=0;i<g_pkt_process_core_num;i++){
+            rx_num = dkfw_rcv_pkt_from_process_core_q(core_seq, i, pkts_burst, MAX_RCV_PKTS);
+            if(!rx_num){
+                continue;
+            }
+            for(j=0;j<rx_num;j++){
+                pkt = pkts_burst[j];
+                stats_pkt_rcv_cnt++;
+                stats_pkt_rcv_bytes += rte_pktmbuf_pkt_len(pkt);
+                rte_pktmbuf_free(pkt);
+            }
+        }
+    }
+
+}
+
 

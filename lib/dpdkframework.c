@@ -92,6 +92,7 @@ static int eal_init(DKFW_CONFIG *config)
 int dkfw_init(DKFW_CONFIG *config)
 {
     int i;
+    int intf_rx_q_num;
 
     config->cores_pkt_process_num = 0;
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
@@ -130,7 +131,13 @@ int dkfw_init(DKFW_CONFIG *config)
         goto err;
     }
 
-    if(interfaces_init(config->cores_pkt_process_num, config->cores_pkt_dispatch_num) < 0){
+    if(config->cores_pkt_dispatch_num){
+        intf_rx_q_num = config->cores_pkt_dispatch_num;
+    }else{
+        intf_rx_q_num = config->cores_pkt_process_num;
+    }
+
+    if(interfaces_init(config->cores_pkt_process_num, intf_rx_q_num) < 0){
         goto err;
     }
 

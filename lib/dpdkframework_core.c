@@ -91,6 +91,7 @@ static int other_core_init_one(DKFW_CORE *core)
 int cores_init(DKFW_CONFIG *config)
 {
     int i;
+    int pkt_to_me_q_num;
     CORE_CONFIG *core_config_curr;
     DKFW_CORE *core_curr;
     
@@ -157,8 +158,14 @@ int cores_init(DKFW_CONFIG *config)
         return -1;
     }
 
+    if(g_pkt_distribute_core_num){
+        pkt_to_me_q_num = g_pkt_distribute_core_num;
+    }else{
+        pkt_to_me_q_num = g_pkt_process_core_num;
+    }
+
     for(i=0;i<g_pkt_process_core_num;i++){
-        if(process_core_init_one(&g_pkt_process_core[i], g_pkt_distribute_core_num) < 0){
+        if(process_core_init_one(&g_pkt_process_core[i], pkt_to_me_q_num) < 0){
             return -1;
         }
     }
