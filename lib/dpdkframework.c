@@ -13,6 +13,10 @@ static char *argv_in[64];
 
 extern int init_ipc_msg_pool(int num);
 
+/* 
+初始化dpdk本体
+返回0成功，其他失败
+*/
 static int eal_init(DKFW_CONFIG *config)
 {
     int i, ret = 0;
@@ -80,6 +84,10 @@ static int eal_init(DKFW_CONFIG *config)
     }
     printf("\n");
 
+    /* 
+        根据用户的配置，组装dpdk需要的参数，并调用rte_eal_init
+        具体含义见dpdk文档
+    */
     ret = rte_eal_init(argc, argv_in);
     if (ret < 0) {
         printf("Error with EAL initialization\n");
@@ -89,11 +97,16 @@ static int eal_init(DKFW_CONFIG *config)
     return ret;
 }
 
+/*
+框架初始化，用户填好config之后调用
+返回0成功，其他失败
+*/
 int dkfw_init(DKFW_CONFIG *config)
 {
     int i;
     int intf_rx_q_num;
 
+    // 根据用户配置，自动填入相关信息
     config->cores_pkt_process_num = 0;
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         if(config->cores_pkt_process[i].core_enabled){
@@ -104,7 +117,12 @@ int dkfw_init(DKFW_CONFIG *config)
             break;
         }
     }
+    if(!config->cores_pkt_process_num){
+        printf("At lesat one process core.\n");
+        goto err;
+    }
 
+    // 根据用户配置，自动填入相关信息
     config->cores_pkt_dispatch_num = 0;
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         if(config->cores_pkt_dispatch[i].core_enabled){
@@ -116,6 +134,7 @@ int dkfw_init(DKFW_CONFIG *config)
         }
     }
 
+    // 根据用户配置，自动填入相关信息
     config->cores_other_num = 0;
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         if(config->cores_other[i].core_enabled){
@@ -127,24 +146,32 @@ int dkfw_init(DKFW_CONFIG *config)
         }
     }
 
+    // 初始化dpdk本体
     if(eal_init(config) < 0){
         goto err;
     }
 
+    // 每块网卡的rss队列数量
     if(config->cores_pkt_dispatch_num){
+        // 如果有专用分发核，则rss队列数量设为分发核数，每个分发核对应一个rss队列
         intf_rx_q_num = config->cores_pkt_dispatch_num;
     }else{
+        // 如果无有专用分发核，则每个业务核都有分发功能
+        // rss队列数量设为业务核数，每个业务核对应一个rss队列
         intf_rx_q_num = config->cores_pkt_process_num;
     }
 
+    // 初始化网卡
     if(interfaces_init(config->cores_pkt_process_num, intf_rx_q_num) < 0){
         goto err;
     }
 
+    // 初始化各个核心
     if(cores_init(config) < 0){
         goto err;
     }
 
+    // 初始化控制系统
     if(init_ipc_msg_pool(256) < 0){
         goto err;
     }
@@ -157,10 +184,12 @@ err:
     return -1;
 }
 
+/*
+框架退出
+*/
 void dkfw_exit(void)
 {
+    // 执行dpdk的清理函数
     rte_eal_cleanup();
 }
-
-
 

@@ -2,6 +2,8 @@
 #define _DPDK_FRAMEWORK_IPC_H
 #include <rte_ring.h>
 
+/* 与控制进程通讯相关，后续使用 */
+
 #define IPC_TO_CORE_RING 0
 #define IPC_TO_BACK_RING 1
 

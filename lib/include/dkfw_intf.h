@@ -9,10 +9,12 @@
 
 #define MAX_RX_Q_NUM_PER_INTF 16
 
+// 网卡相关数据结构
 typedef struct _DKFW_INTF_TAG {
-    int intf_ind; // 0, 1, 2 ...
-    int nic_type;
+    int intf_seq; // 网卡序号，0,1,2,3
+    int nic_type; // 网卡类型，万兆，四万兆
 
+    // 统计信息，从此网卡的rss队列接收到的包数
     unsigned long long stats_rcv_pkts_cnt[MAX_RX_Q_NUM_PER_INTF];
 } DKFW_INTF;
 

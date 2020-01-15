@@ -3,6 +3,8 @@
 
 #define MAX_PROFILE_ITEM_NUM 16
 
+/* cpu 统计相关，后续使用 */
+
 typedef struct _DKFW_PROFILE_TAG {
     int item_cnt;
     

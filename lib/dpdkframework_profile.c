@@ -6,6 +6,8 @@
 
 #include "dkfw_profile.h"
 
+/* cpu统计相关，后续使用 */
+
 static DKFW_PROFILE g_profile;
 
 void dkfw_profile_reset(int item_cnt)

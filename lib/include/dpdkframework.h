@@ -3,6 +3,7 @@
 
 #include "dkfw_config.h"
 
+// 各个核心数量，网卡数量
 extern int g_pkt_process_core_num;
 extern int g_pkt_distribute_core_num;
 extern int g_other_core_num;

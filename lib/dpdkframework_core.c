@@ -26,6 +26,7 @@ static DKFW_CORE *g_core_me = NULL;
 
 extern struct rte_ring *ipc_create_or_lookup_ring(int core_role, int core_seq, int ring_type);
 
+/* 控制通讯相关，后续使用 */
 static int core_init_ipc_rings(DKFW_CORE *core)
 {
     core->ipc_to_me = ipc_create_or_lookup_ring(core->core_role, core->core_seq, IPC_TO_CORE_RING);
@@ -42,6 +43,11 @@ static int core_init_ipc_rings(DKFW_CORE *core)
     return 0;
 }
 
+/*
+    初始化一个业务处理核
+    to_me_q_num为本核接收包的队列数
+    返回0成功，其他失败
+*/
 static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
 {
     int i;
@@ -50,8 +56,11 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
     printf("Init process core ind %d: to_me_q_num %d.\n", core->core_ind, to_me_q_num);
     core->pkts_to_me_q_num = to_me_q_num;
 
+    // 初始化每个接收包队列
     for(i=0;i<to_me_q_num;i++){
         snprintf(buff, sizeof(buff), "pctome%d-%d", core->core_ind, i);
+
+        // dpdk主进程创建队列，其他进程查找队列
         if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
             core->pkts_to_me_q[i].dkfw_ring = rte_ring_create(buff, 65536 * 2, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
         } else {
@@ -63,6 +72,7 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
         }
     }
 
+    /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
         return -1;
     }
@@ -70,8 +80,13 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
     return 0;
 }
 
+/*
+    初始化一个分发核
+    返回0成功，其他失败
+*/
 static int dispatch_core_init_one(DKFW_CORE *core)
 {
+    /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
         return -1;
     }
@@ -79,8 +94,13 @@ static int dispatch_core_init_one(DKFW_CORE *core)
     return 0;
 }
 
+/*
+    初始化一个其他核
+    返回0成功，其他失败
+*/
 static int other_core_init_one(DKFW_CORE *core)
 {
+    /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
         return -1;
     }
@@ -88,6 +108,10 @@ static int other_core_init_one(DKFW_CORE *core)
     return 0;
 }
 
+/*
+    初始化各个核心
+    返回0成功，其他失败
+*/
 int cores_init(DKFW_CONFIG *config)
 {
     int i;
@@ -99,6 +123,7 @@ int cores_init(DKFW_CONFIG *config)
     memset(g_pkt_distribute_core, 0, sizeof(g_pkt_distribute_core));
     memset(g_other_core, 0, sizeof(g_other_core));
 
+    // 初始化相关数据结构
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         core_config_curr = &config->cores_pkt_process[i];
         core_curr = &g_pkt_process_core[i];
@@ -117,6 +142,7 @@ int cores_init(DKFW_CONFIG *config)
     }
     printf("We have process cores: %d\n", g_pkt_process_core_num);
 
+    // 初始化相关数据结构
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         core_config_curr = &config->cores_pkt_dispatch[i];
         core_curr = &g_pkt_distribute_core[i];
@@ -135,6 +161,7 @@ int cores_init(DKFW_CONFIG *config)
     }
     printf("We have distribute cores: %d\n", g_pkt_distribute_core_num);
 
+    // 初始化相关数据结构
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
         core_config_curr = &config->cores_other[i];
         core_curr = &g_other_core[i];
@@ -158,24 +185,31 @@ int cores_init(DKFW_CONFIG *config)
         return -1;
     }
 
+    // 每个业务核收包队列的数量
     if(g_pkt_distribute_core_num){
+        // 如果有专用分发核，则业务核收包队列数量设为分发核数，每个分发核对应一个业务核收包队列
         pkt_to_me_q_num = g_pkt_distribute_core_num;
     }else{
+        // 如果无有专用分发核，则每个业务核都可能从其他业务核收包
+        // 业务核收包队列的数量设为业务核数
         pkt_to_me_q_num = g_pkt_process_core_num;
     }
 
+    // 分别初始化各个核
     for(i=0;i<g_pkt_process_core_num;i++){
         if(process_core_init_one(&g_pkt_process_core[i], pkt_to_me_q_num) < 0){
             return -1;
         }
     }
 
+    // 分别初始化各个核
     for(i=0;i<g_pkt_distribute_core_num;i++){
         if(dispatch_core_init_one(&g_pkt_distribute_core[i]) < 0){
             return -1;
         }
     }
 
+    // 分别初始化各个核
     for(i=0;i<g_other_core_num;i++){
         if(other_core_init_one(&g_other_core[i]) < 0){
             return -1;
@@ -185,6 +219,10 @@ int cores_init(DKFW_CONFIG *config)
     return 0;
 }
 
+/*
+    启动 dpdk 主循环函数
+    返回0成功，其他失败
+*/
 int dkfw_start_loop_raw(void *loop_arg)
 {
     if(!g_core_me->core_func_raw){
@@ -197,12 +235,17 @@ int dkfw_start_loop_raw(void *loop_arg)
     return 0;
 }
 
+/*
+    将一个数据包发送到序号为process_core_seq的业务核的第core_q_num个接收队列
+    返回0成功，其他失败
+*/
 int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf)
 {
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
     int retry = 3;
 
     do{
+        // 调用dpdk队列函数，重试3次
         if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) == 0)){
             ring->stats_enq_cnt++;
             return 0;
@@ -215,6 +258,11 @@ int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct
     return -1;
 }
 
+/*
+    从序号为process_core_seq的业务核的第core_q_num个接收队列中接收数据包
+    最多接收max_pkts_num个，pkts_burst为缓冲区
+    返回实际接收到的包数
+*/
 int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf **pkts_burst, int max_pkts_num)
 {
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
@@ -225,6 +273,7 @@ int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struc
     return nb_rx;
 }
 
+/* 控制通讯相关，后续使用 */
 DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void)
 {
     void *msg;
@@ -239,6 +288,7 @@ DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void)
     return ret ? NULL : (DKFW_IPC_MSG *)msg;
 }
 
+/* 控制通讯相关，后续使用 */
 int dkfw_ipc_send_response_msg(DKFW_IPC_MSG *msg)
 {
     return rte_ring_enqueue(g_core_me->ipc_to_back, msg);

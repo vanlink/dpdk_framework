@@ -19,6 +19,8 @@ static char *argv_in[64];
 
 static struct rte_mempool *ipc_message_pool;
 
+/* 控制通讯相关，后续使用 */
+
 int dkfw_ipc_client_init(char *nuique_name)
 {
     int i, ret;
@@ -37,14 +39,6 @@ int dkfw_ipc_client_init(char *nuique_name)
 
     sprintf(dpdk_argv[argc], "--log-level=2");
     argc++;
-
-/*
-    strcpy(dpdk_argv[argc], "-l");
-    argc++;
-
-    sprintf(dpdk_argv[argc], "0");
-    argc++;
-    */
 
     for(i=0;i<argc;i++){
         argv_in[i] = dpdk_argv[i];
