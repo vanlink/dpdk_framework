@@ -36,6 +36,13 @@ static uint64_t stats_pkt_rcv_bytes_last = 0;
 
 static uint64_t stats_ms_last = 0;
 
+/*
+    根据数据包选择目的业务处理核编号
+    保证同一数据流的双方向始终得到同一处理核
+    从而保证数据流相关内容无锁
+    hash_size为业务处理核数量
+    返回核编号，小于0为出错
+*/
 static inline int get_app_core_seq(struct rte_mbuf *m, int hash_size)
 {
     char *dpdkdat = rte_pktmbuf_mtod(m, char *);
@@ -48,7 +55,12 @@ static inline int get_app_core_seq(struct rte_mbuf *m, int hash_size)
     }
 
     eth = (struct rte_ether_hdr *)dpdkdat;
-    
+
+    /*
+        以以下三元组为源数据进行hash：
+        (源/目的IP中较小的, 源/目的IP中较大的, 源端口+目的端口)
+        这样可以保证同一流的两个方向hash值一致
+    */
     if(ntohs(eth->ether_type) == RTE_ETHER_TYPE_IPV4){
         ipv4 = (struct rte_ipv4_hdr *)(dpdkdat + RTE_ETHER_HDR_LEN);
         if(ipv4->next_proto_id == IPPROTO_TCP){
@@ -69,6 +81,7 @@ static inline int get_app_core_seq(struct rte_mbuf *m, int hash_size)
     return -1;
 }
 
+// 计算并打印统计信息
 static void do_stat(uint64_t ms)
 {
     long long unsigned int pkts_now = (long long unsigned int)stats_pkt_rcv_cnt;
@@ -90,6 +103,7 @@ static void do_stat(uint64_t ms)
         );
 }
 
+// 定时函数，5秒一次
 static void ms_timer(uint64_t ms)
 {
     if((ms % 5000) == 0){
@@ -97,6 +111,7 @@ static void ms_timer(uint64_t ms)
     }
 }
 
+// 专用分发核主循环
 void distribute_loop(void)
 {
     int i, pktind;
@@ -110,14 +125,17 @@ void distribute_loop(void)
     tsc_per_sec = rte_get_tsc_hz();
 
     while(1){
+        // 计算当前毫秒数
         elapsed_ms = rte_rdtsc() * 1000ULL / tsc_per_sec;
-        
+
+        // 定时器，每毫秒一次
         if(elapsed_ms != elapsed_ms_last){
             ms_timer(elapsed_ms);
             elapsed_ms_last = elapsed_ms;
         }
 
         for(i=0;i<g_dkfw_interfaces_num;i++){
+            // 从每个物理接口的第intf_rcvq_seq个rss队列收包
             rx_num = dkfw_rcv_pkt_from_interface(i, intf_rcvq_seq, pkts_burst, MAX_RCV_PKTS);
             if(rx_num){
                 for(pktind=0;pktind<rx_num;pktind++){
@@ -125,8 +143,10 @@ void distribute_loop(void)
 
                     stats_pkt_rcv_cnt++;
                     stats_pkt_rcv_bytes += rte_pktmbuf_pkt_len(pkt);
-                
+
+                    // 计算目的业务处理核序号
                     dst_core_seq = get_app_core_seq(pkt, g_pkt_process_core_num);
+                    // 发送给第dst_core_seq业务处理核的第intf_rcvq_seq个队列
                     if(likely(dst_core_seq >= 0)){
                         dkfw_send_pkt_to_process_core_q(dst_core_seq, intf_rcvq_seq, pkt);
                     }else{
@@ -151,14 +171,17 @@ void app_loop(void)
     tsc_per_sec = rte_get_tsc_hz();
 
     while(1){
+        // 计算当前毫秒数
         elapsed_ms = rte_rdtsc() * 1000ULL / tsc_per_sec;
-        
+
+        // 定时器，每毫秒一次
         if(elapsed_ms != elapsed_ms_last){
             ms_timer(elapsed_ms);
             elapsed_ms_last = elapsed_ms;
         }
 
         for(i=0;i<g_pkt_distribute_core_num;i++){
+            // 从本cpu的第i个收包队列收取数据包
             rx_num = dkfw_rcv_pkt_from_process_core_q(core_seq, i, pkts_burst, MAX_RCV_PKTS);
             if(!rx_num){
                 continue;
@@ -188,20 +211,25 @@ void mix_loop(void)
     tsc_per_sec = rte_get_tsc_hz();
 
     while(1){
+        // 计算当前毫秒数
         elapsed_ms = rte_rdtsc() * 1000ULL / tsc_per_sec;
-        
+
+        // 定时器，每毫秒一次
         if(elapsed_ms != elapsed_ms_last){
             ms_timer(elapsed_ms);
             elapsed_ms_last = elapsed_ms;
         }
 
         for(i=0;i<g_dkfw_interfaces_num;i++){
+            // 从每个物理接口的第intf_rcvq_seq个rss队列收包
             rx_num = dkfw_rcv_pkt_from_interface(i, intf_rcvq_seq, pkts_burst, MAX_RCV_PKTS);
             if(rx_num){
                 for(j=0;j<rx_num;j++){
                     pkt = pkts_burst[j];
 
+                    // 计算目的业务处理核序号
                     dst_core_seq = get_app_core_seq(pkt, g_pkt_process_core_num);
+                    // 发送给第dst_core_seq业务处理核的第intf_rcvq_seq个队列
                     if(likely(dst_core_seq >= 0)){
                         dkfw_send_pkt_to_process_core_q(dst_core_seq, intf_rcvq_seq, pkt);
                     }else{
@@ -212,6 +240,7 @@ void mix_loop(void)
         }
 
         for(i=0;i<g_pkt_process_core_num;i++){
+            // 从本cpu的第i个收包队列收取数据包
             rx_num = dkfw_rcv_pkt_from_process_core_q(core_seq, i, pkts_burst, MAX_RCV_PKTS);
             if(!rx_num){
                 continue;
@@ -226,5 +255,4 @@ void mix_loop(void)
     }
 
 }
-
 
