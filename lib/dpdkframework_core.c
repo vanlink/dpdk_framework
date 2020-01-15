@@ -53,7 +53,7 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
     for(i=0;i<to_me_q_num;i++){
         snprintf(buff, sizeof(buff), "pctome%d-%d", core->core_ind, i);
         if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-            core->pkts_to_me_q[i].dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
+            core->pkts_to_me_q[i].dkfw_ring = rte_ring_create(buff, 65536 * 2, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
         } else {
             core->pkts_to_me_q[i].dkfw_ring = rte_ring_lookup(buff);
         }
@@ -200,15 +200,19 @@ int dkfw_start_loop_raw(void *loop_arg)
 int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf)
 {
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
+    int retry = 3;
 
-    if(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) < 0){
-        ring->stats_enq_err_cnt++;
-        return -1;
-    }
+    do{
+        if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) == 0)){
+            ring->stats_enq_cnt++;
+            return 0;
+        }
+        ring->stats_enq_retry_cnt++;
+    }while(retry--);
 
-    ring->stats_enq_cnt++;
+    ring->stats_enq_err_cnt++;
 
-    return 0;
+    return -1;
 }
 
 int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf **pkts_burst, int max_pkts_num)

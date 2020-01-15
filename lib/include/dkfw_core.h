@@ -8,6 +8,7 @@ typedef struct _DKFW_RING_TAG {
     struct rte_ring *dkfw_ring;
     
     unsigned long long stats_enq_cnt;
+    unsigned long long stats_enq_retry_cnt;
     unsigned long long stats_enq_err_cnt;
 
     unsigned long long stats_deq_cnt;
