@@ -42,6 +42,8 @@ typedef struct _DKFW_CONFIG_TAG {
 
     int process_type;           // dpdk主/从进程，第一个运行的必须为主进程，其他为从
 
+    int alloc_mem;              // dpdk预先分配的内存数量，单位MB。为0则由dpdk自行决定
+
     int cores_pkt_process_num;   // 业务处理核实际数量，初始化时自动填入
     CORE_CONFIG cores_pkt_process[MAX_CORES_PER_ROLE];   // 业务核具体配置
 

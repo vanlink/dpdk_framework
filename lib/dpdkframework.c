@@ -70,6 +70,14 @@ static int eal_init(DKFW_CONFIG *config)
     sprintf(dpdk_argv[argc], "%d", my_core_ind);
     argc++;
 
+    if(config->alloc_mem > 0){
+        strcpy(dpdk_argv[argc], "-m");
+        argc++;
+
+        sprintf(dpdk_argv[argc], "%d", config->alloc_mem);
+        argc++;
+    }
+
     for(i=0;i<MAX_PCI_NUM;i++){
         if(config->pcis_config[i].pci_name[0]){
             sprintf(dpdk_argv[argc], "--pci-whitelist=%s", config->pcis_config[i].pci_name);
