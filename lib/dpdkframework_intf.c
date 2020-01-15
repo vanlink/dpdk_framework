@@ -38,6 +38,16 @@ static void check_port_link_status(int port_ind)
     printf("Port Link Down\n");
 }
 
+#define RSS_HASH_KEY_LENGTH 40
+
+static uint8_t hash_key[RSS_HASH_KEY_LENGTH] = {
+        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
+        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
+        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
+        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
+        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
+};
+
 static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
 {
     int ret, i;
@@ -113,6 +123,8 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     if(rxq_num > 1){
         port_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
         port_conf.rx_adv_conf.rss_conf.rss_hf = (ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP) & dev_info.flow_type_rss_offloads;
+        port_conf.rx_adv_conf.rss_conf.rss_key = hash_key;
+        port_conf.rx_adv_conf.rss_conf.rss_key_len = RSS_HASH_KEY_LENGTH;
     }
 
     rte_eth_promiscuous_enable(port_ind);
