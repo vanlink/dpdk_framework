@@ -114,7 +114,7 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     memset(&port_conf, 0, sizeof(port_conf));
 
     // 最大接收包长
-    port_conf.rxmode.max_rx_pkt_len = 1518;
+    port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MAX_LEN;
 
     // 网卡硬件快速释放特性
     if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_MBUF_FAST_FREE){
