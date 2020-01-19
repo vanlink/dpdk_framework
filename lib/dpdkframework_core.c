@@ -86,6 +86,8 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
 */
 static int dispatch_core_init_one(DKFW_CORE *core)
 {
+    printf("Init dispatch core ind %d\n", core->core_ind);
+
     /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
         return -1;
@@ -98,8 +100,28 @@ static int dispatch_core_init_one(DKFW_CORE *core)
     初始化一个其他核
     返回0成功，其他失败
 */
-static int other_core_init_one(DKFW_CORE *core)
+static int other_core_init_one(DKFW_CORE *core, int to_me_q_num)
 {
+    int i;
+    char buff[128];
+    
+    printf("Init other core ind %d: to_me_q_num %d.\n", core->core_ind, to_me_q_num);
+    core->data_to_me_q_num = to_me_q_num;
+
+    for(i=0;i<to_me_q_num;i++){
+        snprintf(buff, sizeof(buff), "dttome%d-%d", core->core_ind, i);
+
+        if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+            core->data_to_me_q[i].dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
+        } else {
+            core->data_to_me_q[i].dkfw_ring = rte_ring_lookup(buff);
+        }
+        if(!core->data_to_me_q[i].dkfw_ring){
+            printf("other_core_init_one %s err.\n", buff);
+            return -1;
+        }
+    }
+
     /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
         return -1;
@@ -211,7 +233,7 @@ int cores_init(DKFW_CONFIG *config)
 
     // 分别初始化各个核
     for(i=0;i<g_other_core_num;i++){
-        if(other_core_init_one(&g_other_core[i]) < 0){
+        if(other_core_init_one(&g_other_core[i], g_pkt_process_core_num) < 0){
             return -1;
         }
     }

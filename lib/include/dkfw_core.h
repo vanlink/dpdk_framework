@@ -22,9 +22,14 @@ typedef struct _DKFW_CORE_TAG {
     int core_role; // 同CORE_CONFIG
     int core_is_me; // 同CORE_CONFIG
 
+    // for app cores
     int pkts_to_me_q_num; // 本核心接收数据包的队列数量，每一个队列对应一个分发核
                           // 也就是说，分发核n会把包发送到队列n
     DKFW_RING pkts_to_me_q[MAX_CORES_PER_ROLE];  // 本核心接收数据包的队列
+
+    // for other cores
+    int data_to_me_q_num;
+    DKFW_RING data_to_me_q[MAX_CORES_PER_ROLE];
 
     lcore_function_t *core_func_raw; // 同CORE_CONFIG
 
