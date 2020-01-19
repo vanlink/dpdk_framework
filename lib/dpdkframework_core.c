@@ -295,6 +295,34 @@ int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struc
     return nb_rx;
 }
 
+int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *data)
+{
+    DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
+    int retry = 3;
+
+    do{
+        if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, data) == 0)){
+            ring->stats_enq_cnt++;
+            return 0;
+        }
+        ring->stats_enq_retry_cnt++;
+    }while(retry--);
+
+    ring->stats_enq_err_cnt++;
+
+    return -1;
+}
+
+int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num)
+{
+    DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
+    int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, data_burst, max_data_num, NULL);
+
+    ring->stats_deq_cnt += nb_rx;
+
+    return nb_rx;
+}
+
 /* 控制通讯相关，后续使用 */
 DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void)
 {
