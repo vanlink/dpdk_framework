@@ -280,6 +280,16 @@ int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct
     return -1;
 }
 
+int dkfw_pkt_to_process_core_q_stat(int process_core_seq, int core_q_num, uint64_t *errcnt, uint64_t *used)
+{
+    DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
+
+    *errcnt = ring->stats_enq_err_cnt;
+    *used = rte_ring_count(ring->dkfw_ring) * 100 / rte_ring_get_capacity(ring->dkfw_ring);
+
+    return 0;
+}
+
 /*
     从序号为process_core_seq的业务核的第core_q_num个接收队列中接收数据包
     最多接收max_pkts_num个，pkts_burst为缓冲区
@@ -311,6 +321,16 @@ int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *data)
     ring->stats_enq_err_cnt++;
 
     return -1;
+}
+
+int dkfw_data_to_other_core_q_stat(int core_seq, int core_q_num, uint64_t *errcnt, uint64_t *used)
+{
+    DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
+
+    *errcnt = ring->stats_enq_err_cnt;
+    *used = rte_ring_count(ring->dkfw_ring) * 100 / rte_ring_get_capacity(ring->dkfw_ring);
+
+    return 0;
 }
 
 int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num)

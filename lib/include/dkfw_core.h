@@ -42,6 +42,8 @@ extern int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num,
 extern int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf **pkts_burst, int max_pkts_num);
 extern int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *data);
 extern int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num);
+extern int dkfw_data_to_other_core_q_stat(int core_seq, int core_q_num, uint64_t *errcnt, uint64_t *used);
+extern int dkfw_pkt_to_process_core_q_stat(int core_seq, int core_q_num, uint64_t *errcnt, uint64_t *used);
 
 #endif
 

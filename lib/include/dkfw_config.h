@@ -33,7 +33,7 @@ typedef struct _PCI_CONFIG_TAG {
     char pci_name[64];   // 网卡的pci编号
 } PCI_CONFIG;
 
-#define MAX_CORES_PER_ROLE 32    // 每种核类型的最大使用核心数
+#define MAX_CORES_PER_ROLE 16    // 每种核类型的最大使用核心数
 #define MAX_PCI_NUM 8            // 最多连接网卡数
 
 // 主配置结构，用户填好此结构，调用 dkfw_init
