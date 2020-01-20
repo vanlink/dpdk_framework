@@ -280,3 +280,30 @@ int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_
     return rx;
 }
 
+// read nic stats form hw, add it to local stats, and clear hw stats
+int dkfw_update_intf_stats(int nic_seq)
+{
+    struct rte_eth_stats eth_stats;
+
+    memset(&eth_stats, 0, sizeof(eth_stats));
+
+    if(rte_eth_stats_get(nic_seq, &eth_stats) < 0){
+        return -1;
+    }
+
+    g_dkfw_interfaces[nic_seq].nic_stats.ipackets += eth_stats.ipackets;
+    g_dkfw_interfaces[nic_seq].nic_stats.opackets += eth_stats.opackets;
+    g_dkfw_interfaces[nic_seq].nic_stats.ibytes += eth_stats.ibytes;
+    g_dkfw_interfaces[nic_seq].nic_stats.obytes += eth_stats.obytes;
+    g_dkfw_interfaces[nic_seq].nic_stats.imissed += eth_stats.imissed;
+    g_dkfw_interfaces[nic_seq].nic_stats.ierrors += eth_stats.ierrors;
+    g_dkfw_interfaces[nic_seq].nic_stats.oerrors += eth_stats.oerrors;
+    g_dkfw_interfaces[nic_seq].nic_stats.rx_nombuf += eth_stats.rx_nombuf;
+
+    if(rte_eth_stats_reset(nic_seq) < 0){
+        return -1;
+    }
+
+    return 0;
+}
+
