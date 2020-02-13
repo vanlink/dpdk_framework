@@ -138,6 +138,21 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
         port_conf.txmode.offloads |= DEV_TX_OFFLOAD_UDP_CKSUM;
     }
 
+    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_IPV4_CKSUM) {
+        printf("offload DEV_RX_OFFLOAD_IPV4_CKSUM\n");
+        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_IPV4_CKSUM;
+    }
+
+    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_TCP_CKSUM) {
+        printf("offload DEV_RX_OFFLOAD_TCP_CKSUM\n");
+        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_TCP_CKSUM;
+    }
+
+    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_UDP_CKSUM) {
+        printf("offload DEV_RX_OFFLOAD_UDP_CKSUM\n");
+        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_UDP_CKSUM;
+    }
+
     // 设置对称RSS队列
     // 可使一条流的两个方向的包，始终分配到同一个rss队列
     if(rxq_num > 1){
@@ -176,11 +191,12 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
 
         // 分配接收包池，从网卡接收的包使用
         sprintf(buff, "intfrx-%d-%d", port_ind, i);
-        eth_rxq = rte_pktmbuf_pool_create(buff, 65535, 512, RTE_MBUF_PRIV_ALIGN, RTE_MBUF_DEFAULT_BUF_SIZE, SOCKET_ID_ANY);
+        eth_rxq = rte_pktmbuf_pool_create(buff, 65535, 0, RTE_MBUF_PRIV_ALIGN, RTE_MBUF_DEFAULT_BUF_SIZE, SOCKET_ID_ANY);
         if(!eth_rxq){
             printf("rte_pktmbuf_pool_create for intf rx q err\n");
             return -1;
         }
+        printf("rte_pktmbuf_pool_create for intf %d rx q %s\n", port_ind, buff);
         // 设置一个接收队列
         ret = rte_eth_rx_queue_setup(port_ind, i, nb_rxd, port_socket_id, &rxconf, eth_rxq);
         if (ret) {
