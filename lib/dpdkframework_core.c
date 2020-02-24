@@ -264,16 +264,11 @@ int dkfw_start_loop_raw(void *loop_arg)
 int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct rte_mbuf *mbuf)
 {
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
-    int retry = 3;
 
-    do{
-        // 调用dpdk队列函数，重试3次
-        if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) == 0)){
-            ring->stats_enq_cnt++;
-            return 0;
-        }
-        ring->stats_enq_retry_cnt++;
-    }while(retry--);
+    if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) == 0)){
+        ring->stats_enq_cnt++;
+        return 0;
+    }
 
     ring->stats_enq_err_cnt++;
 
@@ -308,16 +303,12 @@ int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struc
 int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *data)
 {
     DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
-    int retry = 3;
 
-    do{
-        if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, data) == 0)){
-            ring->stats_enq_cnt++;
-            return 0;
-        }
-        ring->stats_enq_retry_cnt++;
-    }while(retry--);
-
+    if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, data) == 0)){
+        ring->stats_enq_cnt++;
+        return 0;
+    }
+    
     ring->stats_enq_err_cnt++;
 
     return -1;

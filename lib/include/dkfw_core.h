@@ -9,7 +9,6 @@ typedef struct _DKFW_RING_TAG {
     struct rte_ring *dkfw_ring;  // dpdk 提供的无锁队列
     
     unsigned long long stats_enq_cnt;  // 统计信息，入队列成功次数
-    unsigned long long stats_enq_retry_cnt;  // 统计信息，入队列重试次数
     unsigned long long stats_enq_err_cnt;  // 统计信息，入队列失败次数
 
     unsigned long long stats_deq_cnt;   // 统计信息，出队列次数
