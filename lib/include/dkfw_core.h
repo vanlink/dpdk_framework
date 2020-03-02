@@ -43,5 +43,7 @@ extern int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *da
 extern int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num);
 extern void dkfw_pkt_send_to_process_cores_stat(int q_num, uint64_t *stats, uint64_t *stats_err);
 extern void dkfw_pkt_rcv_from_other_core_stat(int core_seq, uint64_t *stats);
+extern void dkfw_pkt_rcv_from_process_core_stat(int core_seq, uint64_t *stats);
+extern void dkfw_pkt_send_to_other_cores_stat(int q_num, uint64_t *stats, uint64_t *stats_err);
 #endif
 
