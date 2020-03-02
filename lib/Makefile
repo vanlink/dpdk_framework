@@ -14,7 +14,7 @@ endif
 
 build: ${LIBNAME}
 
-OBJS=dpdkframework.o dpdkframework_intf.o dpdkframework_core.o dpdkframework_profile.o dpdkframework_ipc.o
+OBJS=dpdkframework.o dpdkframework_intf.o dpdkframework_core.o dpdkframework_profile.o dpdkframework_ipc.o dpdkframework_timer.o
 
 ${LIBNAME}: ${OBJS}
 	ar crv $@ ${OBJS}
@@ -33,6 +33,9 @@ dpdkframework_profile.o: dpdkframework_profile.c
 
 dpdkframework_ipc.o: dpdkframework_ipc.c
 	gcc -g ${OPTIMIZE} ${DEPS} ${INCLUDE} ${LIBS} -c dpdkframework_ipc.c
+
+dpdkframework_timer.o: dpdkframework_timer.c
+	gcc -g ${OPTIMIZE} ${DEPS} ${INCLUDE} ${LIBS} -c dpdkframework_timer.c
 
 clean:
 	rm -f *.o ${LIBNAME}
