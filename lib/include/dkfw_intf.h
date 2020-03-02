@@ -1,8 +1,7 @@
 #ifndef _DPDK_FRAMEWORK_INTF_H
 #define _DPDK_FRAMEWORK_INTF_H
+#include "dkfw_config.h"
 #include <rte_mbuf.h>
-
-#define MAX_INTERFACE_NUM 32
 
 #define NETCARD_TYPE_IXGBE 0
 #define NETCARD_TYPE_I40E  1
@@ -35,5 +34,6 @@ typedef struct _DKFW_INTF_TAG {
 extern int interfaces_init(int txq_num, int rxq_num);
 extern int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_burst, int max_pkts_num);
 extern int dkfw_update_intf_stats(int nic_seq);
+extern void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats);
 #endif
 

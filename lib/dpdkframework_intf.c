@@ -12,7 +12,7 @@
 
 #include "dkfw_intf.h"
 
-static DKFW_INTF g_dkfw_interfaces[MAX_INTERFACE_NUM];
+static DKFW_INTF g_dkfw_interfaces[MAX_PCI_NUM];
 int g_dkfw_interfaces_num;
 
 /* 检查链路up状态 */
@@ -263,7 +263,7 @@ int interfaces_init(int txq_num, int rxq_num)
     printf("We have %d interfaces.\n", g_dkfw_interfaces_num);
     printf("Init each intf txq=%d rxq=%d.\n", txq_num, rxq_num);
     
-    if(g_dkfw_interfaces_num < 1 || g_dkfw_interfaces_num > MAX_INTERFACE_NUM){
+    if(g_dkfw_interfaces_num < 1 || g_dkfw_interfaces_num > MAX_PCI_NUM){
         return -1;
     }
 
@@ -294,6 +294,16 @@ int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_
     g_dkfw_interfaces[intf_seq].stats_rcv_pkts_cnt[q_num] += rx;
 
     return rx;
+}
+
+// 从每个网口的第q_num个队列收到的包数
+void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats)
+{
+    int i;
+
+    for(i=0;i<g_dkfw_interfaces_num;i++){
+        stats[i] = g_dkfw_interfaces[i].stats_rcv_pkts_cnt[q_num];
+    }
 }
 
 // read nic stats form hw, add it to local stats, and clear hw stats

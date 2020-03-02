@@ -275,15 +275,19 @@ int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct
     return -1;
 }
 
-int dkfw_pkt_to_process_core_q_stat(int process_core_seq, int core_q_num, uint64_t *errcnt, uint64_t *used)
+// 发送到每个业务处理核的第q_num个队列的包数
+void dkfw_pkt_send_to_process_cores_stat(int q_num, uint64_t *stats, uint64_t *stats_err)
 {
-    DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
+    int i;
+    DKFW_RING *ring;
 
-    *errcnt = ring->stats_enq_err_cnt;
-    *used = rte_ring_count(ring->dkfw_ring) * 100 / rte_ring_get_capacity(ring->dkfw_ring);
-
-    return 0;
+    for(i=0;i<g_pkt_process_core_num;i++){
+        ring = &g_pkt_process_core[i].pkts_to_me_q[q_num];
+        stats[i] = ring->stats_enq_cnt;
+        stats_err[i] = ring->stats_enq_err_cnt;
+    }
 }
+
 
 /*
     从序号为process_core_seq的业务核的第core_q_num个接收队列中接收数据包
@@ -314,16 +318,6 @@ int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *data)
     return -1;
 }
 
-int dkfw_data_to_other_core_q_stat(int core_seq, int core_q_num, uint64_t *errcnt, uint64_t *used)
-{
-    DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
-
-    *errcnt = ring->stats_enq_err_cnt;
-    *used = rte_ring_count(ring->dkfw_ring) * 100 / rte_ring_get_capacity(ring->dkfw_ring);
-
-    return 0;
-}
-
 int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num)
 {
     DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
@@ -332,6 +326,18 @@ int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_bu
     ring->stats_deq_cnt += nb_rx;
 
     return nb_rx;
+}
+
+// 从第core_seq个other核的每个（业务核数量）队列中收到的包数
+void dkfw_pkt_rcv_from_other_core_stat(int core_seq, uint64_t *stats)
+{
+    int i;
+    DKFW_RING *ring;
+
+    for(i=0;i<g_pkt_process_core_num;i++){
+        ring = &g_other_core[core_seq].data_to_me_q[i];
+        stats[i] = ring->stats_deq_cnt;
+    }
 }
 
 /* 控制通讯相关，后续使用 */
