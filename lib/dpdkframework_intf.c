@@ -200,7 +200,7 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
 
         // 分配接收包池，从网卡接收的包使用
         get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), port_ind, i);
-        eth_rxq = rte_pktmbuf_pool_create(buff, 65535, 0, RTE_MBUF_PRIV_ALIGN, RTE_MBUF_DEFAULT_BUF_SIZE, SOCKET_ID_ANY);
+        eth_rxq = rte_pktmbuf_pool_create(buff, 65535 * 2, 0, 0, RTE_MBUF_DEFAULT_BUF_SIZE, SOCKET_ID_ANY);
         if(!eth_rxq){
             printf("rte_pktmbuf_pool_create for intf rx q err\n");
             return -1;
