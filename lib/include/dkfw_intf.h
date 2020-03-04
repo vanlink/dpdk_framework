@@ -35,5 +35,6 @@ extern int interfaces_init(int txq_num, int rxq_num);
 extern int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_burst, int max_pkts_num);
 extern int dkfw_update_intf_stats(int nic_seq);
 extern void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats);
+extern int dkfw_interfaces_rxq_stat(int intf_seq, uint64_t *stats_inuse, uint64_t *stats_ava);
 #endif
 

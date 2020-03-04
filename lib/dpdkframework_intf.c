@@ -9,6 +9,7 @@
 #include <rte_string_fns.h>
 #include <rte_common.h>
 #include <rte_mbuf.h>
+#include <rte_mempool.h>
 
 #include "dkfw_intf.h"
 
@@ -50,6 +51,11 @@ static uint8_t hash_key[RSS_HASH_KEY_LENGTH] = {
         0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
 };
 
+static void get_intf_rxq_pkt_mempool_name(char *buff, int buflen, int intf_seq, int qnum)
+{
+    snprintf(buff, buflen, "%d-%d-ifrxpktmq", intf_seq, qnum);
+}
+
 /*
     初始化一个网卡
     返回0成功，其他失败
@@ -68,10 +74,13 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     char buff[1024];
     int port_ind = dkfw_intf->intf_seq;
 
-    // 从dpdk获取网卡硬件基本信息
-    rte_eth_dev_info_get(port_ind, &dev_info);
-
     printf("INIT intf %d ...\n", port_ind);
+
+    // 从dpdk获取网卡硬件基本信息
+    if(rte_eth_dev_info_get(port_ind, &dev_info)){
+        printf("failed to rte_eth_dev_info_get.\n");
+        return -1;
+    }
     
     printf("interface max_tx_queues = %d\n", dev_info.max_tx_queues);
     printf("interface max_rx_queues = %d\n", dev_info.max_rx_queues);
@@ -190,7 +199,7 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
         rxconf.offloads = port_conf.rxmode.offloads;
 
         // 分配接收包池，从网卡接收的包使用
-        sprintf(buff, "intfrx-%d-%d", port_ind, i);
+        get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), port_ind, i);
         eth_rxq = rte_pktmbuf_pool_create(buff, 65535, 0, RTE_MBUF_PRIV_ALIGN, RTE_MBUF_DEFAULT_BUF_SIZE, SOCKET_ID_ANY);
         if(!eth_rxq){
             printf("rte_pktmbuf_pool_create for intf rx q err\n");
@@ -304,6 +313,33 @@ void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats)
     for(i=0;i<g_dkfw_interfaces_num;i++){
         stats[i] = g_dkfw_interfaces[i].stats_rcv_pkts_cnt[q_num];
     }
+}
+
+// 第intf_seq接口的每个收包队列中的当前包数
+int dkfw_interfaces_rxq_stat(int intf_seq, uint64_t *stats_inuse, uint64_t *stats_ava)
+{
+    int i;
+    char buff[64];
+    struct rte_eth_dev_info dev_info;
+    struct rte_mempool *mp;
+
+    if(rte_eth_dev_info_get(intf_seq, &dev_info)){
+        return -1;
+    }
+
+    for(i=0;i<dev_info.nb_rx_queues;i++){
+        get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), intf_seq, i);
+        mp = rte_mempool_lookup(buff);
+        if(mp){
+            stats_ava[i] = rte_mempool_avail_count(mp);
+            stats_inuse[i] = rte_mempool_in_use_count(mp);
+        }else{
+            stats_ava[i] = 99999999;
+            stats_inuse[i] = 99999999;
+        }
+    }
+
+    return 0;
 }
 
 // read nic stats form hw, add it to local stats, and clear hw stats
