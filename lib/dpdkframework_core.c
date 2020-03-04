@@ -112,7 +112,7 @@ static int other_core_init_one(DKFW_CORE *core, int to_me_q_num)
         snprintf(buff, sizeof(buff), "dttome%d-%d", core->core_ind, i);
 
         if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-            core->data_to_me_q[i].dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
+            core->data_to_me_q[i].dkfw_ring = rte_ring_create(buff, 65536, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
         } else {
             core->data_to_me_q[i].dkfw_ring = rte_ring_lookup(buff);
         }
