@@ -31,6 +31,13 @@ typedef struct _CORE_CONFIG_TAG {
 // 网卡pci相关设置
 typedef struct _PCI_CONFIG_TAG {
     char pci_name[64];   // 网卡的pci编号
+
+    int nic_max_rx_pkt_len;
+    int nic_rx_pktbuf_cnt;
+    
+    int nic_tx_desc;
+    int nic_rx_desc;
+
 } PCI_CONFIG;
 
 #define MAX_CORES_PER_ROLE 16    // 每种核类型的最大使用核心数

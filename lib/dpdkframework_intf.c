@@ -13,6 +13,8 @@
 
 #include "dkfw_intf.h"
 
+#define MAX_JUMBO_SIZE 9500
+
 static DKFW_INTF g_dkfw_interfaces[MAX_PCI_NUM];
 int g_dkfw_interfaces_num;
 
@@ -60,7 +62,7 @@ static void get_intf_rxq_pkt_mempool_name(char *buff, int buflen, int intf_seq, 
     初始化一个网卡
     返回0成功，其他失败
 */
-static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
+static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
 {
     int ret, i;
     struct rte_eth_dev_info dev_info;
@@ -73,6 +75,8 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     struct rte_mempool *eth_rxq = NULL;
     char buff[1024];
     int port_ind = dkfw_intf->intf_seq;
+    uint16_t pkt_size;
+    int pkt_cnt;
 
     printf("INIT intf %d ...\n", port_ind);
 
@@ -87,8 +91,8 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     printf("interface max tx desc = %d\n", dev_info.tx_desc_lim.nb_max);
     printf("interface max rx desc = %d\n", dev_info.rx_desc_lim.nb_max);
 
-    nb_txd = dev_info.tx_desc_lim.nb_max;
-    nb_rxd = dev_info.rx_desc_lim.nb_max;
+    nb_txd = config->nic_tx_desc ? config->nic_tx_desc : dev_info.tx_desc_lim.nb_max;
+    nb_rxd = config->nic_rx_desc ? config->nic_rx_desc : dev_info.rx_desc_lim.nb_max;
 
     // 设置网卡配型，万兆或四万兆
     if(strstr(dev_info.driver_name, "i40e")){
@@ -123,7 +127,19 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     memset(&port_conf, 0, sizeof(port_conf));
 
     // 最大接收包长
-    port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MAX_LEN;
+    if(config->nic_max_rx_pkt_len){
+        if(config->nic_max_rx_pkt_len < RTE_ETHER_MIN_LEN){
+            port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MIN_LEN;
+        }else if (config->nic_max_rx_pkt_len > MAX_JUMBO_SIZE){
+            port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_SIZE;
+        }else{
+            port_conf.rxmode.max_rx_pkt_len = config->nic_max_rx_pkt_len;
+        }
+    }else{
+        port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_SIZE;
+    }
+
+    printf("interface %d max_rx_pkt_len %d\n", port_ind, port_conf.rxmode.max_rx_pkt_len);
 
     // 网卡硬件快速释放特性
     if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_MBUF_FAST_FREE){
@@ -162,6 +178,13 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
         port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_UDP_CKSUM;
     }
 
+    if(port_conf.rxmode.max_rx_pkt_len > RTE_ETHER_MAX_LEN){
+        if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_JUMBO_FRAME) {
+            printf("offload DEV_RX_OFFLOAD_JUMBO_FRAME\n");
+            port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_JUMBO_FRAME;
+        }
+    }
+
     // 设置对称RSS队列
     // 可使一条流的两个方向的包，始终分配到同一个rss队列
     if(rxq_num > 1){
@@ -198,10 +221,23 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
         rxconf = dev_info.default_rxconf;
         rxconf.offloads = port_conf.rxmode.offloads;
 
+        pkt_size = RTE_MBUF_DEFAULT_BUF_SIZE;
+        if(port_conf.rxmode.max_rx_pkt_len > RTE_ETHER_MAX_LEN){
+            pkt_size += ((port_conf.rxmode.max_rx_pkt_len - RTE_ETHER_MAX_LEN) + 32);
+        }
+
+        if(config->nic_rx_pktbuf_cnt){
+            pkt_cnt = config->nic_rx_pktbuf_cnt;
+        }else{
+            pkt_cnt = 256 * 1024 *1024 / pkt_size;
+        }
+
+        printf("interface %d rxq %d rx pkt buff %d * %d\n", port_ind, i, pkt_size, pkt_cnt);
+
         // 分配接收包池，从网卡接收的包使用
         get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), port_ind, i);
         // 8 bytes priv size
-        eth_rxq = rte_pktmbuf_pool_create(buff, 65535 * 2, 0, RTE_MBUF_PRIV_ALIGN, RTE_MBUF_DEFAULT_BUF_SIZE, SOCKET_ID_ANY);
+        eth_rxq = rte_pktmbuf_pool_create(buff, pkt_cnt, 0, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
         if(!eth_rxq){
             printf("rte_pktmbuf_pool_create for intf rx q err\n");
             return -1;
@@ -263,7 +299,7 @@ static int interfaces_init_one(DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
     rxq_num个rss接收队列
     返回0成功，其他失败
 */
-int interfaces_init(int txq_num, int rxq_num)
+int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
 {
     int i;
 
@@ -282,7 +318,7 @@ int interfaces_init(int txq_num, int rxq_num)
     // 逐个初始化网卡
     for(i=0;i<g_dkfw_interfaces_num;i++){
         g_dkfw_interfaces[i].intf_seq = i;
-        if(interfaces_init_one(&g_dkfw_interfaces[i], txq_num, rxq_num) < 0){
+        if(interfaces_init_one(&config->pcis_config[i], &g_dkfw_interfaces[i], txq_num, rxq_num) < 0){
             return -1;
         }
     }
