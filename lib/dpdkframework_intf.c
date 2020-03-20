@@ -13,8 +13,6 @@
 
 #include "dkfw_intf.h"
 
-#define MAX_JUMBO_SIZE 9500
-
 static DKFW_INTF g_dkfw_interfaces[MAX_PCI_NUM];
 int g_dkfw_interfaces_num;
 
@@ -130,13 +128,13 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     if(config->nic_max_rx_pkt_len){
         if(config->nic_max_rx_pkt_len < RTE_ETHER_MIN_LEN){
             port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MIN_LEN;
-        }else if (config->nic_max_rx_pkt_len > MAX_JUMBO_SIZE){
-            port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_SIZE;
+        }else if (config->nic_max_rx_pkt_len > MAX_JUMBO_FRAME_SIZE){
+            port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_FRAME_SIZE;
         }else{
             port_conf.rxmode.max_rx_pkt_len = config->nic_max_rx_pkt_len;
         }
     }else{
-        port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_SIZE;
+        port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_FRAME_SIZE;
     }
 
     printf("interface %d max_rx_pkt_len %d\n", port_ind, port_conf.rxmode.max_rx_pkt_len);

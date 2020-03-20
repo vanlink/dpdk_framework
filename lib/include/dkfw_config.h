@@ -3,6 +3,8 @@
 
 #include <rte_launch.h>
 
+#define MAX_JUMBO_FRAME_SIZE 9500
+
 /* 本框架配置参数的数据结构，用于初始化时在 dkfw_init 函数传入 */
 
 enum {
