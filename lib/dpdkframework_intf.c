@@ -134,7 +134,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
             port_conf.rxmode.max_rx_pkt_len = config->nic_max_rx_pkt_len;
         }
     }else{
-        port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_FRAME_SIZE;
+        port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MAX_LEN;
     }
 
     printf("interface %d max_rx_pkt_len %d\n", port_ind, port_conf.rxmode.max_rx_pkt_len);
