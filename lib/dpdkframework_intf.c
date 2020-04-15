@@ -186,16 +186,6 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_QINQ_STRIP;
     }
 
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_VLAN_FILTER) {
-        printf("offload DEV_RX_OFFLOAD_VLAN_FILTER\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_FILTER;
-    }
-
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_VLAN_EXTEND) {
-        printf("offload DEV_RX_OFFLOAD_VLAN_EXTEND\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_EXTEND;
-    }
-
     if(port_conf.rxmode.max_rx_pkt_len > RTE_ETHER_MAX_LEN){
         if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_JUMBO_FRAME) {
             printf("offload DEV_RX_OFFLOAD_JUMBO_FRAME\n");
