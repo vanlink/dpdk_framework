@@ -43,6 +43,45 @@ static int core_init_ipc_rings(DKFW_CORE *core)
     return 0;
 }
 
+static void get_sharemem_name(DKFW_CORE *core, char *buff)
+{
+    buff[0] = 0;
+    
+    if(core->core_role == CORE_ROLE_PKT_DISPATCH){
+        sprintf(buff, "coresm-%s-%d", "disp", core->core_seq);
+    }else if(core->core_role == CORE_ROLE_PKT_PROCESS){
+        sprintf(buff, "coresm-%s-%d", "pkt", core->core_seq);
+    }else if(core->core_role == CORE_ROLE_OTHER){
+        sprintf(buff, "coresm-%s-%d", "oth", core->core_seq);
+    }
+}
+
+static int core_init_sharemem(DKFW_CORE *core)
+{
+    char buff[128];
+
+    get_sharemem_name(core, buff);
+
+    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+        printf("Create ");
+        core->core_shared_mem_rte = rte_memzone_reserve_aligned(buff, 1*1024*1024, SOCKET_ID_ANY, 0, 64);
+    }else{
+        printf("Lookup ");
+        core->core_shared_mem_rte = rte_memzone_lookup(buff);
+    }
+
+    printf("core shared mem [%s] ... ", buff);
+    
+    if(!core->core_shared_mem_rte){
+        printf("fail.\n");
+        return -1;
+    }
+    printf("ok.\n");
+    core->core_shared_mem = core->core_shared_mem_rte->addr;
+
+    return 0;
+}
+
 /*
     初始化一个业务处理核
     to_me_q_num为本核接收包的队列数
@@ -77,6 +116,10 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
         return -1;
     }
 
+    if(core_init_sharemem(core) < 0){
+        return -1;
+    }
+
     return 0;
 }
 
@@ -90,6 +133,10 @@ static int dispatch_core_init_one(DKFW_CORE *core)
 
     /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
+        return -1;
+    }
+
+    if(core_init_sharemem(core) < 0){
         return -1;
     }
     
@@ -124,6 +171,10 @@ static int other_core_init_one(DKFW_CORE *core, int to_me_q_num)
 
     /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
+        return -1;
+    }
+
+    if(core_init_sharemem(core) < 0){
         return -1;
     }
     
@@ -383,5 +434,24 @@ DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void)
 int dkfw_ipc_send_response_msg(DKFW_IPC_MSG *msg)
 {
     return rte_ring_enqueue(g_core_me->ipc_to_back, msg);
+}
+
+void *dkfw_core_sharemem_get(int core_role, int core_seq)
+{
+    if(core_role == CORE_ROLE_PKT_DISPATCH){
+        if(core_seq < g_pkt_distribute_core_num){
+            return g_pkt_distribute_core[core_seq].core_shared_mem;
+        }
+    }else if(core_role == CORE_ROLE_PKT_PROCESS){
+        if(core_seq < g_pkt_process_core_num){
+            return g_pkt_process_core[core_seq].core_shared_mem;
+        }
+    }else if(core_role == CORE_ROLE_OTHER){
+        if(core_seq < g_other_core_num){
+            return g_other_core[core_seq].core_shared_mem;
+        }
+    }
+
+    return NULL;
 }
 

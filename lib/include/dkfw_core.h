@@ -34,6 +34,9 @@ typedef struct _DKFW_CORE_TAG {
 
     struct rte_ring *ipc_to_me;    // 与控制程序通讯接口，后续使用
     struct rte_ring *ipc_to_back;  // 与控制程序通讯接口，后续使用
+
+    const struct rte_memzone *core_shared_mem_rte;
+    void *core_shared_mem;
 } DKFW_CORE;
 
 extern int cores_init(DKFW_CONFIG *config);
@@ -45,5 +48,6 @@ extern void dkfw_pkt_send_to_process_cores_stat(int q_num, uint64_t *stats, uint
 extern void dkfw_pkt_rcv_from_other_core_stat(int core_seq, uint64_t *stats);
 extern void dkfw_pkt_rcv_from_process_core_stat(int core_seq, uint64_t *stats);
 extern void dkfw_pkt_send_to_other_cores_stat(int q_num, uint64_t *stats, uint64_t *stats_err);
+extern void *dkfw_core_sharemem_get(int core_role, int core_seq);
 #endif
 
