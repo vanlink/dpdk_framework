@@ -43,16 +43,16 @@ static int core_init_ipc_rings(DKFW_CORE *core)
     return 0;
 }
 
-static void get_sharemem_name(DKFW_CORE *core, char *buff)
+static void get_sharemem_name(int core_role, int core_seq, char *buff)
 {
     buff[0] = 0;
     
-    if(core->core_role == CORE_ROLE_PKT_DISPATCH){
-        sprintf(buff, "coresm-%s-%d", "disp", core->core_seq);
-    }else if(core->core_role == CORE_ROLE_PKT_PROCESS){
-        sprintf(buff, "coresm-%s-%d", "pkt", core->core_seq);
-    }else if(core->core_role == CORE_ROLE_OTHER){
-        sprintf(buff, "coresm-%s-%d", "oth", core->core_seq);
+    if(core_role == CORE_ROLE_PKT_DISPATCH){
+        sprintf(buff, "coresm-%s-%d", "disp", core_seq);
+    }else if(core_role == CORE_ROLE_PKT_PROCESS){
+        sprintf(buff, "coresm-%s-%d", "pkt", core_seq);
+    }else if(core_role == CORE_ROLE_OTHER){
+        sprintf(buff, "coresm-%s-%d", "oth", core_seq);
     }
 }
 
@@ -60,7 +60,7 @@ static int core_init_sharemem(DKFW_CORE *core)
 {
     char buff[128];
 
-    get_sharemem_name(core, buff);
+    get_sharemem_name(core->core_role, core->core_seq, buff);
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
         printf("Create ");
@@ -438,20 +438,13 @@ int dkfw_ipc_send_response_msg(DKFW_IPC_MSG *msg)
 
 void *dkfw_core_sharemem_get(int core_role, int core_seq)
 {
-    if(core_role == CORE_ROLE_PKT_DISPATCH){
-        if(core_seq < g_pkt_distribute_core_num){
-            return g_pkt_distribute_core[core_seq].core_shared_mem;
-        }
-    }else if(core_role == CORE_ROLE_PKT_PROCESS){
-        if(core_seq < g_pkt_process_core_num){
-            return g_pkt_process_core[core_seq].core_shared_mem;
-        }
-    }else if(core_role == CORE_ROLE_OTHER){
-        if(core_seq < g_other_core_num){
-            return g_other_core[core_seq].core_shared_mem;
-        }
-    }
+    char buff[128];
+    const struct rte_memzone *m;
 
-    return NULL;
+    get_sharemem_name(core_role, core_seq, buff);
+
+    m = rte_memzone_lookup(buff);
+
+    return m ? m->addr : NULL;
 }
 
