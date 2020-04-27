@@ -19,11 +19,11 @@ typedef struct _DKFW_PROFILE_TAG {
 } DKFW_PROFILE;
 
 extern void dkfw_profile_reset(int item_cnt);
+extern void dkfw_profile_reset_extmem(int item_cnt, void *mem);
 extern void dkfw_profile_start(uint64_t t);
 extern void dkfw_profile_end(uint64_t t);
 extern void dkfw_profile_item_start(uint64_t t, int i);
 extern void dkfw_profile_item_end(uint64_t t, int i);
-extern DKFW_PROFILE *dkfw_profile_get(void);
 extern void dkfw_profile_snapshot(DKFW_PROFILE *old);
 extern DKFW_PROFILE *dkfw_profile_calc(DKFW_PROFILE *snap);
 extern void dkfw_profile_result_get(DKFW_PROFILE *dst);
