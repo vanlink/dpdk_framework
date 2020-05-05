@@ -129,7 +129,21 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
 */
 static int dispatch_core_init_one(DKFW_CORE *core)
 {
+    char buff[128];
+    
     printf("Init dispatch core ind %d\n", core->core_ind);
+
+    snprintf(buff, sizeof(buff), "pcapme%d", core->core_ind);
+
+    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+        core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
+    } else {
+        core->pcap_to_me_q.dkfw_ring = rte_ring_lookup(buff);
+    }
+    if(!core->pcap_to_me_q.dkfw_ring){
+        printf("dispatch_core_init_one %s err.\n", buff);
+        return -1;
+    }
 
     /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
@@ -413,6 +427,50 @@ void dkfw_pkt_rcv_from_other_core_stat(int core_seq, uint64_t *stats)
         ring = &g_other_core[core_seq].data_to_me_q[i];
         stats[i] = ring->stats_deq_cnt;
     }
+}
+
+int dkfw_send_to_pcap_core_q(int core_seq, void *data)
+{
+    DKFW_RING *ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
+
+    if(likely(rte_ring_enqueue(ring->dkfw_ring, data) == 0)){
+        ring->stats_enq_cnt++;
+        return 0;
+    }
+    
+    ring->stats_enq_err_cnt++;
+
+    return -1;
+}
+
+void dkfw_send_to_pcap_cores_stat(uint64_t *stats, uint64_t *stats_err)
+{
+    int i;
+    DKFW_RING *ring;
+
+    for(i=0;i<g_pkt_distribute_core_num;i++){
+        ring = &g_pkt_distribute_core[i].pcap_to_me_q;
+        stats[i] = ring->stats_enq_cnt;
+        stats_err[i] = ring->stats_enq_err_cnt;
+    }
+}
+
+int dkfw_rcv_from_pcap_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num)
+{
+    DKFW_RING *ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
+    int nb_rx = rte_ring_dequeue_burst(ring->dkfw_ring, data_burst, max_data_num, NULL);
+
+    ring->stats_deq_cnt += nb_rx;
+
+    return nb_rx;
+}
+
+void dkfw_rcv_from_pcap_core_stat(int core_seq, uint64_t *stats)
+{
+    DKFW_RING *ring;
+
+    ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
+    *stats = ring->stats_deq_cnt;
 }
 
 /* 控制通讯相关，后续使用 */
