@@ -32,6 +32,7 @@ typedef struct _DKFW_CORE_TAG {
 
     // for dispatch core, rcv pcap
     DKFW_RING pcap_to_me_q;
+    struct rte_mempool *pcap_pktpool;
 
     lcore_function_t *core_func_raw; // 同CORE_CONFIG
 
@@ -60,6 +61,7 @@ extern int dkfw_send_to_pcap_core_ring(struct rte_ring *dkfw_ring, void *data);
 extern int dkfw_rcv_from_pcap_core_q(int core_seq, struct rte_mbuf **pkts_burst, int max_pkts_num);
 extern void dkfw_rcv_from_pcap_core_stat(int core_seq, uint64_t *stats);
 extern struct rte_ring *dkfw_get_dispatch_core_pcap_ring(int core_ind);
+extern struct rte_mempool *dkfw_get_dispatch_core_pcap_pktpool(int core_ind);
 
 extern void *dkfw_core_sharemem_get(int core_role, int core_seq);
 #endif
