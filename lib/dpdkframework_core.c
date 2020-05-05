@@ -123,6 +123,11 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
     return 0;
 }
 
+static void get_dispatch_core_pcap_q_name(int core_ind, char *buff)
+{
+    sprintf(buff, "pcapq-%d", core_ind);
+}
+
 /*
     初始化一个分发核
     返回0成功，其他失败
@@ -133,7 +138,7 @@ static int dispatch_core_init_one(DKFW_CORE *core)
     
     printf("Init dispatch core ind %d\n", core->core_ind);
 
-    snprintf(buff, sizeof(buff), "pcapme%d", core->core_ind);
+    get_dispatch_core_pcap_q_name(core->core_ind, buff);
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
         core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
@@ -429,30 +434,13 @@ void dkfw_pkt_rcv_from_other_core_stat(int core_seq, uint64_t *stats)
     }
 }
 
-int dkfw_send_to_pcap_core_q(int core_seq, void *data)
+int dkfw_send_to_pcap_core_ring(struct rte_ring *dkfw_ring, void *data)
 {
-    DKFW_RING *ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
-
-    if(likely(rte_ring_enqueue(ring->dkfw_ring, data) == 0)){
-        ring->stats_enq_cnt++;
+    if(likely(rte_ring_enqueue(dkfw_ring, data) == 0)){
         return 0;
     }
-    
-    ring->stats_enq_err_cnt++;
 
     return -1;
-}
-
-void dkfw_send_to_pcap_cores_stat(uint64_t *stats, uint64_t *stats_err)
-{
-    int i;
-    DKFW_RING *ring;
-
-    for(i=0;i<g_pkt_distribute_core_num;i++){
-        ring = &g_pkt_distribute_core[i].pcap_to_me_q;
-        stats[i] = ring->stats_enq_cnt;
-        stats_err[i] = ring->stats_enq_err_cnt;
-    }
 }
 
 int dkfw_rcv_from_pcap_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num)
@@ -471,6 +459,15 @@ void dkfw_rcv_from_pcap_core_stat(int core_seq, uint64_t *stats)
 
     ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
     *stats = ring->stats_deq_cnt;
+}
+
+struct rte_ring *dkfw_get_dispatch_core_pcap_ring(int core_ind)
+{
+    char buff[128];
+
+    get_dispatch_core_pcap_q_name(core_ind, buff);
+
+    return rte_ring_lookup(buff);
 }
 
 /* 控制通讯相关，后续使用 */
