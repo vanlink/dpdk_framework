@@ -134,20 +134,27 @@ static void get_dispatch_core_pcap_q_name(int core_ind, char *buff)
 */
 static int dispatch_core_init_one(DKFW_CORE *core)
 {
+    int i;
     char buff[128];
     
     printf("Init dispatch core ind %d\n", core->core_ind);
 
-    get_dispatch_core_pcap_q_name(core->core_ind, buff);
+    for(i=0;i<g_pkt_distribute_core_num;i++){
+        get_dispatch_core_pcap_q_name(i, buff);
 
-    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-        core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
-    } else {
-        core->pcap_to_me_q.dkfw_ring = rte_ring_lookup(buff);
-    }
-    if(!core->pcap_to_me_q.dkfw_ring){
-        printf("dispatch_core_init_one %s err.\n", buff);
-        return -1;
+        if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+            printf("Create ");
+            core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
+        } else {
+            printf("Lookup ");
+            core->pcap_to_me_q.dkfw_ring = rte_ring_lookup(buff);
+        }
+        printf("pcap ring [%s] ... ", buff);
+        if(!core->pcap_to_me_q.dkfw_ring){
+            printf("fail.\n");
+            return -1;
+        }
+        printf("OK.\n");
     }
 
     /* 控制通讯相关，后续使用 */
@@ -443,10 +450,15 @@ int dkfw_send_to_pcap_core_ring(struct rte_ring *dkfw_ring, void *data)
     return -1;
 }
 
-int dkfw_rcv_from_pcap_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num)
+int dkfw_rcv_from_pcap_core_q(int core_seq, struct rte_mbuf **pkts_burst, int max_pkts_num)
 {
     DKFW_RING *ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
-    int nb_rx = rte_ring_dequeue_burst(ring->dkfw_ring, data_burst, max_data_num, NULL);
+
+    if(likely(rte_ring_empty(ring->dkfw_ring))){
+        return 0;
+    }
+    
+    int nb_rx = rte_ring_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
 
     ring->stats_deq_cnt += nb_rx;
 

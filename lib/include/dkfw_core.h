@@ -57,7 +57,7 @@ extern void dkfw_pkt_rcv_from_process_core_stat(int core_seq, uint64_t *stats);
 extern void dkfw_pkt_send_to_other_cores_stat(int q_num, uint64_t *stats, uint64_t *stats_err);
 
 extern int dkfw_send_to_pcap_core_ring(struct rte_ring *dkfw_ring, void *data);
-extern int dkfw_rcv_from_pcap_core_q(int core_seq, int core_q_num, void **data_burst, int max_data_num);
+extern int dkfw_rcv_from_pcap_core_q(int core_seq, struct rte_mbuf **pkts_burst, int max_pkts_num);
 extern void dkfw_rcv_from_pcap_core_stat(int core_seq, uint64_t *stats);
 extern struct rte_ring *dkfw_get_dispatch_core_pcap_ring(int core_ind);
 
