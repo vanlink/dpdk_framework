@@ -36,7 +36,10 @@ typedef struct _PCI_CONFIG_TAG {
 
     int nic_max_rx_pkt_len;
     int nic_rx_pktbuf_cnt;
-    
+
+    int nic_hw_strip_vlan;
+    int nic_hw_strip_qinq;
+
     int nic_tx_desc;
     int nic_rx_desc;
 

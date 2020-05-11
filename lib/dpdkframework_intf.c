@@ -176,14 +176,18 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_UDP_CKSUM;
     }
 
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_VLAN_STRIP) {
-        printf("offload DEV_RX_OFFLOAD_VLAN_STRIP\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_STRIP;
+    if(config->nic_hw_strip_vlan){
+        if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_VLAN_STRIP) {
+            printf("offload DEV_RX_OFFLOAD_VLAN_STRIP\n");
+            port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_STRIP;
+        }
     }
 
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_QINQ_STRIP) {
-        printf("offload DEV_RX_OFFLOAD_QINQ_STRIP\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_QINQ_STRIP;
+    if(config->nic_hw_strip_qinq){
+        if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_QINQ_STRIP) {
+            printf("offload DEV_RX_OFFLOAD_QINQ_STRIP\n");
+            port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_QINQ_STRIP;
+        }
     }
 
     if(port_conf.rxmode.max_rx_pkt_len > RTE_ETHER_MAX_LEN){
