@@ -139,46 +139,41 @@ static void get_dispatch_core_pcap_pktpool_name(int core_ind, char *buff)
 */
 static int dispatch_core_init_one(DKFW_CORE *core)
 {
-    int i;
     char buff[128];
     
     printf("Init dispatch core ind %d\n", core->core_ind);
 
-    for(i=0;i<g_pkt_distribute_core_num;i++){
-        get_dispatch_core_pcap_q_name(i, buff);
+    get_dispatch_core_pcap_q_name(core->core_seq, buff);
 
-        if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-            printf("Create ");
-            core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
-        } else {
-            printf("Lookup ");
-            core->pcap_to_me_q.dkfw_ring = rte_ring_lookup(buff);
-        }
-        printf("pcap ring [%s] ... ", buff);
-        if(!core->pcap_to_me_q.dkfw_ring){
-            printf("fail.\n");
-            return -1;
-        }
-        printf("OK.\n");
+    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+        printf("Create ");
+        core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
+    } else {
+        printf("Lookup ");
+        core->pcap_to_me_q.dkfw_ring = rte_ring_lookup(buff);
     }
-
-    for(i=0;i<g_pkt_distribute_core_num;i++){
-        get_dispatch_core_pcap_pktpool_name(i, buff);
-
-        if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-            printf("Create ");
-            core->pcap_pktpool = rte_pktmbuf_pool_create(buff, 8192, 0, RTE_MBUF_PRIV_ALIGN, MAX_JUMBO_FRAME_SIZE + 8, SOCKET_ID_ANY);
-        } else {
-            printf("Lookup ");
-            core->pcap_pktpool = rte_mempool_lookup(buff);
-        }
-        printf("pcap pktbuff [%s] ... ", buff);
-        if(!core->pcap_pktpool){
-            printf("fail.\n");
-            return -1;
-        }
-        printf("OK.\n");
+    printf("pcap ring [%s] ... ", buff);
+    if(!core->pcap_to_me_q.dkfw_ring){
+        printf("fail.\n");
+        return -1;
     }
+    printf("OK.\n");
+
+    get_dispatch_core_pcap_pktpool_name(core->core_seq, buff);
+
+    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+        printf("Create ");
+        core->pcap_pktpool = rte_pktmbuf_pool_create(buff, 8192, 0, RTE_MBUF_PRIV_ALIGN, MAX_JUMBO_FRAME_SIZE + 8, SOCKET_ID_ANY);
+    } else {
+        printf("Lookup ");
+        core->pcap_pktpool = rte_mempool_lookup(buff);
+    }
+    printf("pcap pktbuff [%s] ... ", buff);
+    if(!core->pcap_pktpool){
+        printf("fail.\n");
+        return -1;
+    }
+    printf("OK.\n");
 
     /* 控制通讯相关，后续使用 */
     if(core_init_ipc_rings(core) < 0){
