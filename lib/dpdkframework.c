@@ -7,6 +7,7 @@
 
 #include "dkfw_core.h"
 #include "dkfw_intf.h"
+#include "dkfw_memory.h"
 
 static char dpdk_argv[64][64];
 static char *argv_in[64];
@@ -181,6 +182,10 @@ int dkfw_init(DKFW_CONFIG *config)
 
     // 初始化控制系统
     if(init_ipc_msg_pool(256) < 0){
+        goto err;
+    }
+
+    if(global_init_sharemem() < 0){
         goto err;
     }
 
