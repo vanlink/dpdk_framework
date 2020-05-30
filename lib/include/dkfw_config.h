@@ -34,9 +34,6 @@ typedef struct _CORE_CONFIG_TAG {
 typedef struct _PCI_CONFIG_TAG {
     char pci_name[64];   // 网卡的pci编号
 
-    int nic_max_rx_pkt_len;
-    int nic_rx_pktbuf_cnt;
-
     int nic_hw_strip_vlan;
     int nic_hw_strip_qinq;
 
@@ -65,6 +62,8 @@ typedef struct _DKFW_CONFIG_TAG {
     int cores_other_num;
     CORE_CONFIG cores_other[MAX_CORES_PER_ROLE];
 
+    int nic_rx_pktbuf_cnt; // packets cnt for all interfaces
+    int nic_max_rx_pkt_len;
     PCI_CONFIG pcis_config[MAX_PCI_NUM];    // 连接网卡具体配置，连接几个网卡就填几个
 
 } DKFW_CONFIG;

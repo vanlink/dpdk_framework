@@ -16,6 +16,9 @@
 static DKFW_INTF g_dkfw_interfaces[MAX_PCI_NUM];
 int g_dkfw_interfaces_num;
 
+// packet pool for all interface all q
+static struct rte_mempool *g_eth_rxq = NULL;
+
 /* 检查链路up状态 */
 static void check_port_link_status(int port_ind)
 {
@@ -53,14 +56,29 @@ static uint8_t hash_key[RSS_HASH_KEY_LENGTH] = {
 
 static void get_intf_rxq_pkt_mempool_name(char *buff, int buflen, int intf_seq, int qnum)
 {
-    snprintf(buff, buflen, "%d-%d-ifrxpktmq", intf_seq, qnum);
+    snprintf(buff, buflen, "dkfwnicpkts");
+}
+
+static int get_max_interface_rcv_pkt_len(int config_len)
+{
+    if(config_len){
+        if(config_len < RTE_ETHER_MIN_LEN){
+            return RTE_ETHER_MIN_LEN;
+        }else if (config_len > MAX_JUMBO_FRAME_SIZE){
+            return MAX_JUMBO_FRAME_SIZE;
+        }else{
+            return config_len;
+        }
+    }else{
+        return RTE_ETHER_MAX_LEN;
+    }
 }
 
 /*
     初始化一个网卡
     返回0成功，其他失败
 */
-static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq_num, int rxq_num)
+static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq_num, int rxq_num, int max_rx_pkt_len)
 {
     int ret, i;
     struct rte_eth_dev_info dev_info;
@@ -70,11 +88,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     int port_socket_id = SOCKET_ID_ANY;
     uint16_t nb_txd;
     uint16_t nb_rxd;
-    struct rte_mempool *eth_rxq = NULL;
-    char buff[1024];
     int port_ind = dkfw_intf->intf_seq;
-    uint16_t pkt_size;
-    int pkt_cnt;
 
     printf("INIT intf %d ...\n", port_ind);
 
@@ -125,17 +139,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     memset(&port_conf, 0, sizeof(port_conf));
 
     // 最大接收包长
-    if(config->nic_max_rx_pkt_len){
-        if(config->nic_max_rx_pkt_len < RTE_ETHER_MIN_LEN){
-            port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MIN_LEN;
-        }else if (config->nic_max_rx_pkt_len > MAX_JUMBO_FRAME_SIZE){
-            port_conf.rxmode.max_rx_pkt_len = MAX_JUMBO_FRAME_SIZE;
-        }else{
-            port_conf.rxmode.max_rx_pkt_len = config->nic_max_rx_pkt_len;
-        }
-    }else{
-        port_conf.rxmode.max_rx_pkt_len = RTE_ETHER_MAX_LEN;
-    }
+    port_conf.rxmode.max_rx_pkt_len = max_rx_pkt_len;
 
     printf("interface %d max_rx_pkt_len %d\n", port_ind, port_conf.rxmode.max_rx_pkt_len);
 
@@ -233,30 +237,8 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         rxconf = dev_info.default_rxconf;
         rxconf.offloads = port_conf.rxmode.offloads;
 
-        pkt_size = RTE_MBUF_DEFAULT_BUF_SIZE;
-        if(port_conf.rxmode.max_rx_pkt_len > RTE_ETHER_MAX_LEN){
-            pkt_size += ((port_conf.rxmode.max_rx_pkt_len - RTE_ETHER_MAX_LEN) + 32);
-        }
-
-        if(config->nic_rx_pktbuf_cnt){
-            pkt_cnt = config->nic_rx_pktbuf_cnt;
-        }else{
-            pkt_cnt = 256 * 1024 *1024 / pkt_size;
-        }
-
-        printf("interface %d rxq %d rx pkt buff %d * %d\n", port_ind, i, pkt_size, pkt_cnt);
-
-        // 分配接收包池，从网卡接收的包使用
-        get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), port_ind, i);
-        // 8 bytes priv size
-        eth_rxq = rte_pktmbuf_pool_create(buff, pkt_cnt, 0, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
-        if(!eth_rxq){
-            printf("rte_pktmbuf_pool_create for intf rx q err\n");
-            return -1;
-        }
-        printf("rte_pktmbuf_pool_create for intf %d rx q %s\n", port_ind, buff);
         // 设置一个接收队列
-        ret = rte_eth_rx_queue_setup(port_ind, i, nb_rxd, port_socket_id, &rxconf, eth_rxq);
+        ret = rte_eth_rx_queue_setup(port_ind, i, nb_rxd, port_socket_id, &rxconf, g_eth_rxq);
         if (ret) {
             printf("rte_eth_rx_queue_setup %d err\n", i);
             return -1;
@@ -314,6 +296,8 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
 int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
 {
     int i;
+    int pkt_cnt = 0, pkt_size= 0, config_pkt_len = 0;
+    char buff[128];
 
     // 从dpdk获取连接的网卡数
     g_dkfw_interfaces_num = rte_eth_dev_count_avail();
@@ -327,10 +311,30 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
 
     memset(g_dkfw_interfaces, 0, sizeof(g_dkfw_interfaces));
 
+    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+        if(config->nic_rx_pktbuf_cnt){
+            pkt_cnt = config->nic_rx_pktbuf_cnt;
+        }else{
+            pkt_cnt = 100000;
+        }
+        config_pkt_len = get_max_interface_rcv_pkt_len(config->nic_max_rx_pkt_len);
+        pkt_size = RTE_MBUF_DEFAULT_BUF_SIZE;
+        if(config_pkt_len > RTE_ETHER_MAX_LEN){
+            pkt_size += ((config_pkt_len - RTE_ETHER_MAX_LEN) + 32);
+        }
+        printf("interface rxq pkt pool pktsize=%d pktcnt=%d\n", pkt_size, pkt_cnt);
+        get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), 0, 0);
+        g_eth_rxq = rte_pktmbuf_pool_create("dkfwnicpkts", pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
+        if(!g_eth_rxq){
+            printf("rte_pktmbuf_pool_create for intf rx q err\n");
+            return -1;
+        }
+    }
+
     // 逐个初始化网卡
     for(i=0;i<g_dkfw_interfaces_num;i++){
         g_dkfw_interfaces[i].intf_seq = i;
-        if(interfaces_init_one(&config->pcis_config[i], &g_dkfw_interfaces[i], txq_num, rxq_num) < 0){
+        if(interfaces_init_one(&config->pcis_config[i], &g_dkfw_interfaces[i], txq_num, rxq_num, config_pkt_len) < 0){
             return -1;
         }
     }
@@ -367,25 +371,18 @@ void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats)
 // 第intf_seq接口的每个收包队列中的当前包数
 int dkfw_interfaces_rxq_stat(int intf_seq, uint64_t *stats_inuse, uint64_t *stats_ava)
 {
-    int i;
+    int i = 0;
     char buff[64];
-    struct rte_eth_dev_info dev_info;
     struct rte_mempool *mp;
 
-    if(rte_eth_dev_info_get(intf_seq, &dev_info)){
-        return -1;
-    }
-
-    for(i=0;i<dev_info.nb_rx_queues;i++){
-        get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), intf_seq, i);
-        mp = rte_mempool_lookup(buff);
-        if(mp){
-            stats_ava[i] = rte_mempool_avail_count(mp);
-            stats_inuse[i] = rte_mempool_in_use_count(mp);
-        }else{
-            stats_ava[i] = 99999999;
-            stats_inuse[i] = 99999999;
-        }
+    get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), intf_seq, i);
+    mp = rte_mempool_lookup(buff);
+    if(mp){
+        stats_ava[i] = rte_mempool_avail_count(mp);
+        stats_inuse[i] = rte_mempool_in_use_count(mp);
+    }else{
+        stats_ava[i] = 99999999;
+        stats_inuse[i] = 99999999;
     }
 
     return 0;
