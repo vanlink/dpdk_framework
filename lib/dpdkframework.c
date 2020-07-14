@@ -171,7 +171,7 @@ int dkfw_init(DKFW_CONFIG *config)
     }
 
     // 初始化网卡
-    if(interfaces_init(config, config->cores_pkt_process_num, intf_rx_q_num) < 0){
+    if(interfaces_init(config, 1/* config->cores_pkt_process_num */, intf_rx_q_num) < 0){
         goto err;
     }
 
