@@ -71,11 +71,15 @@ static int eal_init(DKFW_CONFIG *config)
     sprintf(dpdk_argv[argc], "%d", my_core_ind);
     argc++;
 
-    if(config->alloc_mem > 0){
-        strcpy(dpdk_argv[argc], "-m");
+    if(config->number_of_channels > 0){
+        strcpy(dpdk_argv[argc], "-n");
         argc++;
+        sprintf(dpdk_argv[argc], "%d", config->number_of_channels);
+        argc++;
+    }
 
-        sprintf(dpdk_argv[argc], "%d", config->alloc_mem);
+    if(config->socket_limit[0]){
+        sprintf(dpdk_argv[argc], "--socket-limit=%s", config->socket_limit);
         argc++;
     }
 
