@@ -8,6 +8,8 @@
 
 #define MAX_RX_Q_NUM_PER_INTF 16
 
+#define PKT_MBUF_POOL_NAME "dkfwnicpkts" // mbuf pool name for interfaces/pcap
+
 // for read and clear
 typedef struct _DKFW_NIC_STATS_TAG {
     uint64_t ipackets;

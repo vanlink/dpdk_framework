@@ -54,11 +54,6 @@ static uint8_t hash_key[RSS_HASH_KEY_LENGTH] = {
         0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
 };
 
-static void get_intf_rxq_pkt_mempool_name(char *buff, int buflen, int intf_seq, int qnum)
-{
-    snprintf(buff, buflen, "dkfwnicpkts");
-}
-
 static int get_max_interface_rcv_pkt_len(int config_len)
 {
     if(config_len){
@@ -297,7 +292,6 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
 {
     int i;
     int pkt_cnt = 0, pkt_size= 0, config_pkt_len = 0;
-    char buff[128];
 
     // 从dpdk获取连接的网卡数
     g_dkfw_interfaces_num = rte_eth_dev_count_avail();
@@ -323,8 +317,7 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
             pkt_size += ((config_pkt_len - RTE_ETHER_MAX_LEN) + 32);
         }
         printf("interface rxq pkt pool pktsize=%d pktcnt=%d\n", pkt_size, pkt_cnt);
-        get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), 0, 0);
-        g_eth_rxq = rte_pktmbuf_pool_create("dkfwnicpkts", pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
+        g_eth_rxq = rte_pktmbuf_pool_create(PKT_MBUF_POOL_NAME, pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
         if(!g_eth_rxq){
             printf("rte_pktmbuf_pool_create for intf rx q err\n");
             return -1;
@@ -372,11 +365,9 @@ void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats)
 int dkfw_interfaces_rxq_stat(int intf_seq, uint64_t *stats_inuse, uint64_t *stats_ava)
 {
     int i = 0;
-    char buff[64];
     struct rte_mempool *mp;
 
-    get_intf_rxq_pkt_mempool_name(buff, sizeof(buff), intf_seq, i);
-    mp = rte_mempool_lookup(buff);
+    mp = rte_mempool_lookup(PKT_MBUF_POOL_NAME);
     if(mp){
         stats_ava[i] = rte_mempool_avail_count(mp);
         stats_inuse[i] = rte_mempool_in_use_count(mp);

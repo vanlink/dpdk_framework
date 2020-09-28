@@ -128,11 +128,6 @@ static void get_dispatch_core_pcap_q_name(int core_ind, char *buff)
     sprintf(buff, "pcapq-%d", core_ind);
 }
 
-static void get_dispatch_core_pcap_pktpool_name(int core_ind, char *buff)
-{
-    sprintf(buff, "pcappkts-%d", core_ind);
-}
-
 /*
     初始化一个分发核
     返回0成功，其他失败
@@ -154,22 +149,6 @@ static int dispatch_core_init_one(DKFW_CORE *core)
     }
     printf("pcap ring [%s] ... ", buff);
     if(!core->pcap_to_me_q.dkfw_ring){
-        printf("fail.\n");
-        return -1;
-    }
-    printf("OK.\n");
-
-    get_dispatch_core_pcap_pktpool_name(core->core_seq, buff);
-
-    if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-        printf("Create ");
-        core->pcap_pktpool = rte_pktmbuf_pool_create(buff, 8192, 0, RTE_MBUF_PRIV_ALIGN, MAX_JUMBO_FRAME_SIZE + 8, SOCKET_ID_ANY);
-    } else {
-        printf("Lookup ");
-        core->pcap_pktpool = rte_mempool_lookup(buff);
-    }
-    printf("pcap pktbuff [%s] ... ", buff);
-    if(!core->pcap_pktpool){
         printf("fail.\n");
         return -1;
     }
@@ -498,15 +477,6 @@ struct rte_ring *dkfw_get_dispatch_core_pcap_ring(int core_ind)
     get_dispatch_core_pcap_q_name(core_ind, buff);
 
     return rte_ring_lookup(buff);
-}
-
-struct rte_mempool *dkfw_get_dispatch_core_pcap_pktpool(int core_ind)
-{
-    char buff[128];
-
-    get_dispatch_core_pcap_pktpool_name(core_ind, buff);
-
-    return rte_mempool_lookup(buff);
 }
 
 /* 控制通讯相关，后续使用 */
