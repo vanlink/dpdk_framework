@@ -26,7 +26,7 @@ typedef struct _DKFW_IPC_MSG_TAG {
 
 #define IPC_MSG_BODY(msg) &(msg)->msg_body[0]
 
-extern int dkfw_ipc_client_init(char *nuique_name);
+extern int dkfw_ipc_client_init(char *nuique_name, int core);
 extern void dkfw_ipc_client_exit(void);
 extern DKFW_IPC_MSG *dkfw_ipc_rcv_msg(void);
 extern DKFW_IPC_MSG *dkfw_ipc_msg_alloc(void);

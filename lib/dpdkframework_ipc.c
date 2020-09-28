@@ -21,7 +21,7 @@ static struct rte_mempool *ipc_message_pool;
 
 /* 控制通讯相关，后续使用 */
 
-int dkfw_ipc_client_init(char *nuique_name)
+int dkfw_ipc_client_init(char *nuique_name, int core)
 {
     int i, ret;
     int argc = 0;
@@ -31,6 +31,13 @@ int dkfw_ipc_client_init(char *nuique_name)
 
     if(nuique_name && nuique_name[0]){
         sprintf(dpdk_argv[argc], "--file-prefix=%s", nuique_name);
+        argc++;
+    }
+
+    if(core >= 0){
+        strcpy(dpdk_argv[argc], "-l");
+        argc++;
+        sprintf(dpdk_argv[argc], "%d", core);
         argc++;
     }
 
