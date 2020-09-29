@@ -16,8 +16,13 @@
 static DKFW_INTF g_dkfw_interfaces[MAX_PCI_NUM];
 int g_dkfw_interfaces_num;
 
-// packet pool for all interface all q
-static struct rte_mempool *g_eth_rxq = NULL;
+// packet pool, one for each dispatch core
+static struct rte_mempool *g_eth_rxq[MAX_CORES_PER_ROLE] = { NULL };
+
+void dkfw_get_pkt_pool_name(int dispatch_core_ind, char *buff)
+{
+    sprintf(buff, "dkfwnicpkts%d", dispatch_core_ind);
+}
 
 /* 检查链路up状态 */
 static void check_port_link_status(int port_ind)
@@ -233,7 +238,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         rxconf.offloads = port_conf.rxmode.offloads;
 
         // 设置一个接收队列
-        ret = rte_eth_rx_queue_setup(port_ind, i, nb_rxd, port_socket_id, &rxconf, g_eth_rxq);
+        ret = rte_eth_rx_queue_setup(port_ind, i, nb_rxd, port_socket_id, &rxconf, g_eth_rxq[i]);
         if (ret) {
             printf("rte_eth_rx_queue_setup %d err\n", i);
             return -1;
@@ -292,6 +297,7 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
 {
     int i;
     int pkt_cnt = 0, pkt_size= 0, config_pkt_len = 0;
+    char buff[32];
 
     // 从dpdk获取连接的网卡数
     g_dkfw_interfaces_num = rte_eth_dev_count_avail();
@@ -311,16 +317,21 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
         }else{
             pkt_cnt = 100000;
         }
+        pkt_cnt = pkt_cnt / config->cores_pkt_dispatch_num;
         config_pkt_len = get_max_interface_rcv_pkt_len(config->nic_max_rx_pkt_len);
         pkt_size = RTE_MBUF_DEFAULT_BUF_SIZE;
         if(config_pkt_len > RTE_ETHER_MAX_LEN){
             pkt_size += ((config_pkt_len - RTE_ETHER_MAX_LEN) + 32);
         }
-        printf("interface rxq pkt pool pktsize=%d pktcnt=%d\n", pkt_size, pkt_cnt);
-        g_eth_rxq = rte_pktmbuf_pool_create(PKT_MBUF_POOL_NAME, pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
-        if(!g_eth_rxq){
-            printf("rte_pktmbuf_pool_create for intf rx q err\n");
-            return -1;
+
+        for(i=0;i<config->cores_pkt_dispatch_num;i++){
+            dkfw_get_pkt_pool_name(i, buff);
+            printf("Pkt pool [%d] pktsize=%d pktcnt=%d\n", i, pkt_size, pkt_cnt);
+            g_eth_rxq[i] = rte_pktmbuf_pool_create(buff, pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
+            if(!g_eth_rxq[i]){
+                printf("rte_pktmbuf_pool_create for intf rx q err\n");
+                return -1;
+            }
         }
     }
 
@@ -362,12 +373,14 @@ void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats)
 }
 
 // 第intf_seq接口的每个收包队列中的当前包数
-int dkfw_interfaces_rxq_stat(int intf_seq, uint64_t *stats_inuse, uint64_t *stats_ava)
+int dkfw_pkt_mbuf_pool_stat(int seq, uint64_t *stats_inuse, uint64_t *stats_ava)
 {
     int i = 0;
     struct rte_mempool *mp;
+    char buff[64];
 
-    mp = rte_mempool_lookup(PKT_MBUF_POOL_NAME);
+    dkfw_get_pkt_pool_name(seq, buff);
+    mp = rte_mempool_lookup(buff);
     if(mp){
         stats_ava[i] = rte_mempool_avail_count(mp);
         stats_inuse[i] = rte_mempool_in_use_count(mp);

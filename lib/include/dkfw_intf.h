@@ -8,8 +8,6 @@
 
 #define MAX_RX_Q_NUM_PER_INTF 16
 
-#define PKT_MBUF_POOL_NAME "dkfwnicpkts" // mbuf pool name for interfaces/pcap
-
 // for read and clear
 typedef struct _DKFW_NIC_STATS_TAG {
     uint64_t ipackets;
@@ -37,6 +35,7 @@ extern int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num);
 extern int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_burst, int max_pkts_num);
 extern int dkfw_update_intf_stats(int nic_seq);
 extern void dkfw_pkt_rcv_from_interfaces_stat(int q_num, uint64_t *stats);
-extern int dkfw_interfaces_rxq_stat(int intf_seq, uint64_t *stats_inuse, uint64_t *stats_ava);
+extern int dkfw_pkt_mbuf_pool_stat(int seq, uint64_t *stats_inuse, uint64_t *stats_ava);
+extern void dkfw_get_pkt_pool_name(int dispatch_core_ind, char *buff);
 #endif
 
