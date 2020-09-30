@@ -142,7 +142,7 @@ static int dispatch_core_init_one(DKFW_CORE *core)
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
         printf("Create ");
-        core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 4096, SOCKET_ID_ANY, 0);
+        core->pcap_to_me_q.dkfw_ring = rte_ring_create(buff, 8192, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
     } else {
         printf("Lookup ");
         core->pcap_to_me_q.dkfw_ring = rte_ring_lookup(buff);
@@ -440,7 +440,7 @@ void dkfw_pkt_rcv_from_other_core_stat(int core_seq, uint64_t *stats)
 
 int dkfw_send_to_pcap_core_ring(struct rte_ring *dkfw_ring, void *data)
 {
-    if(likely(rte_ring_enqueue(dkfw_ring, data) == 0)){
+    if(likely(rte_ring_sp_enqueue(dkfw_ring, data) == 0)){
         return 0;
     }
 
@@ -454,8 +454,8 @@ int dkfw_rcv_from_pcap_core_q(int core_seq, struct rte_mbuf **pkts_burst, int ma
     if(likely(rte_ring_empty(ring->dkfw_ring))){
         return 0;
     }
-    
-    int nb_rx = rte_ring_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
+
+    int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
 
     ring->stats_deq_cnt += nb_rx;
 
