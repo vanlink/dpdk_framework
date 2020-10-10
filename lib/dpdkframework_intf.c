@@ -74,6 +74,63 @@ static int get_max_interface_rcv_pkt_len(int config_len)
     }
 }
 
+static int sym_hash_enable(int port_id, uint32_t ftype, enum rte_eth_hash_function function)
+{
+    struct rte_eth_hash_filter_info info;
+    int ret = 0;
+    uint32_t idx = 0;
+    uint32_t offset = 0;
+
+    memset(&info, 0, sizeof(info));
+
+    ret = rte_eth_dev_filter_supported(port_id, RTE_ETH_FILTER_HASH);
+    if (ret < 0) {
+        printf("RTE_ETH_FILTER_HASH not supported on port: %d", port_id);
+        return ret;
+    }
+
+    info.info_type = RTE_ETH_HASH_FILTER_GLOBAL_CONFIG;
+    info.info.global_conf.hash_func = function;
+
+    idx = ftype / UINT64_BIT;
+    offset = ftype % UINT64_BIT;
+    info.info.global_conf.valid_bit_mask[idx] |= (1ULL << offset);
+    info.info.global_conf.sym_hash_enable_mask[idx] |= (1ULL << offset);
+
+    ret = rte_eth_dev_filter_ctrl(port_id, RTE_ETH_FILTER_HASH, RTE_ETH_FILTER_SET, &info);
+    if (ret < 0){
+        printf("Cannot set global hash configurations on port %u", port_id);
+        return ret;
+    }
+
+    return 0;
+}
+
+static int sym_hash_set(int port_id, int enable)
+{
+    int ret = 0;
+    struct rte_eth_hash_filter_info info;
+
+    memset(&info, 0, sizeof(info));
+
+    ret = rte_eth_dev_filter_supported(port_id, RTE_ETH_FILTER_HASH);
+    if (ret < 0) {
+        printf("RTE_ETH_FILTER_HASH not supported on port: %d", port_id);
+        return ret;
+    }
+
+    info.info_type = RTE_ETH_HASH_FILTER_SYM_HASH_ENA_PER_PORT;
+    info.info.enable = enable;
+    ret = rte_eth_dev_filter_ctrl(port_id, RTE_ETH_FILTER_HASH, RTE_ETH_FILTER_SET, &info);
+
+    if (ret < 0) {
+        printf("Cannot set symmetric hash enable per port on port %u", port_id);
+        return ret;
+    }
+
+    return 0;
+}
+
 /*
     初始化一个网卡
     返回0成功，其他失败
@@ -206,8 +263,13 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     if(rxq_num > 1){
         port_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
         port_conf.rx_adv_conf.rss_conf.rss_hf = (ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP) & dev_info.flow_type_rss_offloads;
-        port_conf.rx_adv_conf.rss_conf.rss_key = hash_key;
-        port_conf.rx_adv_conf.rss_conf.rss_key_len = RSS_HASH_KEY_LENGTH;
+        if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
+            printf("Set Symmetric RSS for 40G netcard step 1.\n");
+        }else{
+            printf("Set Symmetric RSS for 10G netcard.\n");
+            port_conf.rx_adv_conf.rss_conf.rss_key = hash_key;
+            port_conf.rx_adv_conf.rss_conf.rss_key_len = RSS_HASH_KEY_LENGTH;
+        }
     }
 
     // 使能混杂模式
@@ -220,6 +282,21 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     if (ret) {
         printf("rte_eth_dev_configure err\n");
         return -1;
+    }
+
+    if(rxq_num > 1){
+        if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
+            printf("Set Symmetric RSS for 40G netcard step 2.\n");
+            if(sym_hash_enable(port_ind, RTE_ETH_FLOW_NONFRAG_IPV4_TCP, RTE_ETH_HASH_FUNCTION_TOEPLITZ) < 0){
+                return -1;
+            }
+            if(sym_hash_enable(port_ind, RTE_ETH_FLOW_NONFRAG_IPV4_UDP, RTE_ETH_HASH_FUNCTION_TOEPLITZ) < 0){
+                return -1;
+            }
+            if(sym_hash_set(port_ind, 1) < 0){
+                return -1;
+            }
+        }
     }
 
     // 设置网卡发送和接收描述符的数量为最大
