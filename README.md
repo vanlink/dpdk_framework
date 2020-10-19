@@ -7,32 +7,13 @@
  - test目录：基于工具库的测试程序
 
 # 编译安装
+
+
 ## 基础环境
 linux操作系统，gcc/make等基础编译环境安装。
 ## 安装DPDK
+[安装DPDK](dpdk-install.md)
 
-目前选用dpdk 19.11版本。
-
-按照dpdk官方文档提供的方式编译即可。编译完成后注意以下事项：
-
- - 设置好dpdk相关的环境变量，例如：
-```shell
-export RTE_SDK=/usr/src/dpdk-19.11
-export RTE_TARGET=x86_64-native-linuxapp-gcc
-```
- - 设置好dpdk接管的接口，例如：
-```shell
-python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.0
-python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.1
-```
- - 预留hugepage
- 
- 方法参考dpdk官方介绍
- 
- - 预留dpdk专用核心
- 
- 修改grub，方法参考dpdk官方介绍
- 
 ## 编译工具库
 
 - 进入lib目录编译源代码
