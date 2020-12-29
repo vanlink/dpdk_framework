@@ -10,7 +10,7 @@ systemctl disable firewalld.service
 ```shell
 yum -y update
 yum groupinstall "Development Tools"
-yum install -y pciutils gcc openssl-devel bc numactl-devel python libpcap-devel samba lrzsz vim meson ninja-build
+yum install -y pciutils gcc openssl-devel bc numactl numactl-devel python libpcap-devel samba lrzsz vim meson ninja-build
 
 yum install epel-release
 sudo yum -y install gcc libpcap-devel pcre-devel libyaml-devel file-devel \
