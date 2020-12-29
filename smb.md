@@ -19,3 +19,8 @@ browseable=yes
 available=yes
 guest ok=yes
 ```
+
+```shell
+systemctl start smb.service
+systemctl enable smb.service
+```
