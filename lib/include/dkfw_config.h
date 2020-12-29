@@ -49,6 +49,8 @@ typedef struct _PCI_CONFIG_TAG {
 typedef struct _DKFW_CONFIG_TAG {
     char nuique_name[64];       // 多实例时的唯一标识，一般为空即可
 
+    int single_process;         // single process mode
+
     int process_type;           // dpdk主/从进程，第一个运行的必须为主进程，其他为从
 
     int number_of_channels;     //    -n <number of channels>  Set the number of memory channels to use.

@@ -276,7 +276,7 @@ int cores_init(DKFW_CONFIG *config)
     }
     printf("We have other cores: %d\n", g_other_core_num);
 
-    if(!g_core_me){
+    if(!config->single_process && !g_core_me){
         printf("Failed to find me core.\n");
         return -1;
     }

@@ -9,8 +9,8 @@
 #include "dkfw_intf.h"
 #include "dkfw_memory.h"
 
-static char dpdk_argv[64][64];
-static char *argv_in[64];
+static char dpdk_argv[150][150];
+static char *argv_in[150];
 
 extern int init_ipc_msg_pool(int num);
 
@@ -24,6 +24,9 @@ static int eal_init(DKFW_CONFIG *config)
     int argc = 0;
     int my_core_ind = -1;
     int my_core_cnt = 0;
+    char buff[256];
+    char allcores[256] = {0};
+    CORE_CONFIG *core;
 
     strcpy(dpdk_argv[argc], "dkfw");
     argc++;
@@ -33,42 +36,74 @@ static int eal_init(DKFW_CONFIG *config)
         argc++;
     }
 
-    sprintf(dpdk_argv[argc], "--proc-type=%s", config->process_type == PROCESS_TYPE_PRIMARY ? "primary" : "secondary");
-    argc++;
+    if(!config->single_process){
+        sprintf(dpdk_argv[argc], "--proc-type=%s", config->process_type == PROCESS_TYPE_PRIMARY ? "primary" : "secondary");
+        argc++;
+    }
 
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
-        if(config->cores_pkt_process[i].core_enabled && config->cores_pkt_process[i].core_is_me){
-            my_core_ind = config->cores_pkt_process[i].core_ind;
-            my_core_cnt++;
+        core = &config->cores_pkt_process[i];
+        if(core->core_enabled){
+            if(core->core_is_me){
+                my_core_ind = core->core_ind;
+                my_core_cnt++;
+            }
+            sprintf(buff, "%d,", core->core_ind);
+            strcat(allcores, buff);
+        }else{
             break;
         }
     }
 
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
-        if(config->cores_pkt_dispatch[i].core_enabled && config->cores_pkt_dispatch[i].core_is_me){
-            my_core_ind = config->cores_pkt_dispatch[i].core_ind;
-            my_core_cnt++;
+        core = &config->cores_pkt_dispatch[i];
+        if(core->core_enabled){
+            if(core->core_is_me){
+                my_core_ind = core->core_ind;
+                my_core_cnt++;
+            }
+            sprintf(buff, "%d,", core->core_ind);
+            strcat(allcores, buff);
+        }else{
             break;
         }
     }
 
     for(i=0;i<MAX_CORES_PER_ROLE;i++){
-        if(config->cores_other[i].core_enabled && config->cores_other[i].core_is_me){
-            my_core_ind = config->cores_other[i].core_ind;
-            my_core_cnt++;
+        core = &config->cores_other[i];
+        if(core->core_enabled){
+            if(core->core_is_me){
+                my_core_ind = core->core_ind;
+                my_core_cnt++;
+            }
+            sprintf(buff, "%d,", core->core_ind);
+            strcat(allcores, buff);
+        }else{
             break;
         }
     }
 
-    if(my_core_cnt != 1 || my_core_ind < 0){
-        printf("Invalid my core.\n");
-        return -1;
+    if(config->single_process){
+        if(!allcores[0]){
+            printf("Invalid all cores [%s].\n", allcores);
+            return -1;
+        }
+        allcores[strlen(allcores) - 1] = 0;
+    }else{
+        if(my_core_cnt != 1 || my_core_ind < 0){
+            printf("Invalid my core.\n");
+            return -1;
+        }
     }
 
     strcpy(dpdk_argv[argc], "-l");
     argc++;
 
-    sprintf(dpdk_argv[argc], "%d", my_core_ind);
+    if(config->single_process){
+        sprintf(dpdk_argv[argc], "%s", allcores);
+    }else{
+        sprintf(dpdk_argv[argc], "%d", my_core_ind);
+    }
     argc++;
 
     if(config->number_of_channels > 0){
