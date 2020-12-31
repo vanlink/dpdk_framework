@@ -375,6 +375,7 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
     int i;
     int pkt_cnt = 0, pkt_size= 0, config_pkt_len = 0;
     char buff[32];
+    int disp_core_cnt;
 
     // 从dpdk获取连接的网卡数
     g_dkfw_interfaces_num = rte_eth_dev_count_avail();
@@ -389,19 +390,21 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
     memset(g_dkfw_interfaces, 0, sizeof(g_dkfw_interfaces));
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
+        disp_core_cnt = config->cores_pkt_dispatch_num ? config->cores_pkt_dispatch_num : config->cores_pkt_process_num;
+
         if(config->nic_rx_pktbuf_cnt){
             pkt_cnt = config->nic_rx_pktbuf_cnt;
         }else{
             pkt_cnt = 100000;
         }
-        pkt_cnt = pkt_cnt / config->cores_pkt_dispatch_num;
+        pkt_cnt = pkt_cnt / disp_core_cnt;
         config_pkt_len = get_max_interface_rcv_pkt_len(config->nic_max_rx_pkt_len);
         pkt_size = RTE_MBUF_DEFAULT_BUF_SIZE;
         if(config_pkt_len > RTE_ETHER_MAX_LEN){
             pkt_size += ((config_pkt_len - RTE_ETHER_MAX_LEN) + 32);
         }
 
-        for(i=0;i<config->cores_pkt_dispatch_num;i++){
+        for(i=0;i<disp_core_cnt;i++){
             dkfw_get_pkt_pool_name(i, buff);
             printf("Pkt pool [%d] pktsize=%d pktcnt=%d\n", i, pkt_size, pkt_cnt);
             g_eth_rxq[i] = rte_pktmbuf_pool_create(buff, pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
