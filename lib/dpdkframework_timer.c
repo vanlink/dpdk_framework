@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <rte_per_lcore.h>
+
 #include "dkfw_timer.h"
 
 #define TVN_BITS (6)
@@ -49,7 +51,7 @@ struct tvec_t_base_s {
 };
 
 typedef struct tvec_t_base_s tvec_base_t;
-static tvec_base_t tvec_bases;
+static RTE_DEFINE_PER_LCORE(tvec_base_t, tvec_bases);
 
 static inline void set_running_timer(tvec_base_t * base, 
     struct timer_list * timer)
@@ -107,7 +109,7 @@ typedef struct timer_base_s timer_base_t;
 static void init_timer(struct timer_list * timer)
 {
     timer->entry.next = NULL;
-    timer->base = &tvec_bases.t_base;
+    timer->base = &RTE_PER_LCORE(tvec_bases).t_base;
 }
 
 static inline void detach_timer(struct timer_list * timer, 
@@ -132,7 +134,7 @@ static int __mod_timer(struct timer_list * timer, unsigned long expires)
         ret = 1;
     }
 
-    new_base = & (tvec_bases);
+    new_base = & (RTE_PER_LCORE(tvec_bases));
     
     timer->expires = expires;
     internal_add_timer(new_base, timer);
@@ -204,7 +206,7 @@ static inline void __run_timers(tvec_base_t * base, unsigned long absms)
 
 int dkfw_run_timer(unsigned long absms)
 {
-    tvec_base_t * base = & (tvec_bases);
+    tvec_base_t * base = & (RTE_PER_LCORE(tvec_bases));
 
     if(time_after_eq(absms, base->timer_ticks)) {
         __run_timers(base, absms);
@@ -219,9 +221,9 @@ void dkfw_init_timers(unsigned long absms)
     int j;
     tvec_base_t * base;
 
-    memset(&tvec_bases, 0, sizeof(tvec_bases));
+    memset(&RTE_PER_LCORE(tvec_bases), 0, sizeof(tvec_base_t));
 
-    base = &(tvec_bases);
+    base = &(RTE_PER_LCORE(tvec_bases));
     for(j = 0; j < TVN_SIZE; j++) {
         INIT_LIST_HEAD(base->tv5.vec + j);
         INIT_LIST_HEAD(base->tv4.vec + j);
