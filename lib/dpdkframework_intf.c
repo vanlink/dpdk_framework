@@ -407,7 +407,7 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
         for(i=0;i<disp_core_cnt;i++){
             dkfw_get_pkt_pool_name(i, buff);
             printf("Pkt pool [%d] pktsize=%d pktcnt=%d\n", i, pkt_size, pkt_cnt);
-            g_eth_rxq[i] = rte_pktmbuf_pool_create(buff, pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN, pkt_size, SOCKET_ID_ANY);
+            g_eth_rxq[i] = rte_pktmbuf_pool_create(buff, pkt_cnt, 256, RTE_MBUF_PRIV_ALIGN * 4, pkt_size, SOCKET_ID_ANY);
             if(!g_eth_rxq[i]){
                 printf("rte_pktmbuf_pool_create for intf rx q err\n");
                 return -1;
