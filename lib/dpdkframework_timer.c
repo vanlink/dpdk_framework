@@ -28,10 +28,6 @@
         typecheck(unsigned long, b) && \
         ((long)(a) - (long)(b) >= 0))
 
-struct timer_base_s {
-    struct timer_list * running_timer;
-};
-
 typedef struct tvec_s {
     struct list_head vec[TVN_SIZE];
 } tvec_t;
@@ -41,7 +37,6 @@ typedef struct tvec_root_s {
 } tvec_root_t;
 
 struct tvec_t_base_s {
-    struct timer_base_s t_base;
     unsigned long timer_ticks;
     tvec_root_t tv1;
     tvec_t tv2;
@@ -52,12 +47,6 @@ struct tvec_t_base_s {
 
 typedef struct tvec_t_base_s tvec_base_t;
 static RTE_DEFINE_PER_LCORE(tvec_base_t, tvec_bases);
-
-static inline void set_running_timer(tvec_base_t * base, 
-    struct timer_list * timer)
-{
-    base->t_base.running_timer = timer;
-}
 
 static void internal_add_timer(tvec_base_t * base, struct timer_list * timer)
 {
@@ -104,12 +93,9 @@ static void internal_add_timer(tvec_base_t * base, struct timer_list * timer)
     list_add_tail(&timer->entry, vec);
 }
 
-typedef struct timer_base_s timer_base_t;
-
 static void init_timer(struct timer_list * timer)
 {
     timer->entry.next = NULL;
-    timer->base = &RTE_PER_LCORE(tvec_bases).t_base;
 }
 
 static inline void detach_timer(struct timer_list * timer, 
@@ -193,7 +179,6 @@ static inline void __run_timers(tvec_base_t * base, unsigned long absms)
             timer = list_entry(head->next, struct timer_list, entry);
             fn = timer->function;
             data = timer->data;
-            set_running_timer(base, timer);
             detach_timer(timer, 1);
             {
                 fn(timer, data);
@@ -201,7 +186,6 @@ static inline void __run_timers(tvec_base_t * base, unsigned long absms)
         }
     }
 
-    set_running_timer(base, NULL);
 }
 
 int dkfw_run_timer(unsigned long absms)

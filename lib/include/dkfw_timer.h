@@ -3,7 +3,6 @@
 
 #include "dkfw_list.h"
 
-struct timer_base_s;
 struct timer_list;
 
 typedef void (*linux_timer_cb_t)(struct timer_list *timer, unsigned long arg);
@@ -13,7 +12,6 @@ struct timer_list {
     unsigned long expires;
     linux_timer_cb_t function;
     unsigned long data;
-    struct timer_base_s * base;
 };
 
 extern int dkfw_run_timer(unsigned long absms);
