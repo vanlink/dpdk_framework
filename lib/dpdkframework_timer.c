@@ -3,16 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <rte_per_lcore.h>
-
 #include "dkfw_timer.h"
-
-#define TVN_BITS (6)
-#define TVR_BITS (19)
-#define TVN_SIZE (1 << TVN_BITS)
-#define TVR_SIZE (1 << TVR_BITS)
-#define TVN_MASK (TVN_SIZE - 1)
-#define TVR_MASK (TVR_SIZE - 1)
 
 #define timer_pending(timer) ((timer)->entry.next != NULL)
 
@@ -27,26 +18,6 @@
         (typecheck(unsigned long, a) && \
         typecheck(unsigned long, b) && \
         ((long)(a) - (long)(b) >= 0))
-
-typedef struct tvec_s {
-    struct list_head vec[TVN_SIZE];
-} tvec_t;
-
-typedef struct tvec_root_s {
-    struct list_head vec[TVR_SIZE];
-} tvec_root_t;
-
-struct tvec_t_base_s {
-    unsigned long timer_ticks;
-    tvec_root_t tv1;
-    tvec_t tv2;
-    tvec_t tv3;
-    tvec_t tv4;
-    tvec_t tv5;
-};
-
-typedef struct tvec_t_base_s tvec_base_t;
-static RTE_DEFINE_PER_LCORE(tvec_base_t, tvec_bases);
 
 static void internal_add_timer(tvec_base_t * base, struct timer_list * timer)
 {
@@ -98,8 +69,7 @@ static void init_timer(struct timer_list * timer)
     timer->entry.next = NULL;
 }
 
-static inline void detach_timer(struct timer_list * timer, 
-    int clear_pending)
+static inline void detach_timer(struct timer_list * timer, int clear_pending)
 {
     struct list_head * entry = &timer->entry;
     __list_del(entry->prev, entry->next);
@@ -110,7 +80,7 @@ static inline void detach_timer(struct timer_list * timer,
     entry->prev = LIST_POISON2;
 }
 
-static int __mod_timer(struct timer_list * timer, unsigned long expires)
+static int __mod_timer(tvec_base_t *tvec_bases, struct timer_list * timer, unsigned long expires)
 {
     tvec_base_t * new_base;
     int ret = 0;
@@ -120,7 +90,7 @@ static int __mod_timer(struct timer_list * timer, unsigned long expires)
         ret = 1;
     }
 
-    new_base = & (RTE_PER_LCORE(tvec_bases));
+    new_base = tvec_bases;
     
     timer->expires = expires;
     internal_add_timer(new_base, timer);
@@ -188,9 +158,9 @@ static inline void __run_timers(tvec_base_t * base, unsigned long absms)
 
 }
 
-int dkfw_run_timer(unsigned long absms)
+int dkfw_run_timer(tvec_base_t *tvec_bases, unsigned long absms)
 {
-    tvec_base_t * base = & (RTE_PER_LCORE(tvec_bases));
+    tvec_base_t * base = tvec_bases;
 
     if(time_after_eq(absms, base->timer_ticks)) {
         __run_timers(base, absms);
@@ -200,14 +170,14 @@ int dkfw_run_timer(unsigned long absms)
     return 0;
 }
 
-void dkfw_init_timers(unsigned long absms)
+void dkfw_init_timers(tvec_base_t *tvec_bases, unsigned long absms)
 {
     int j;
     tvec_base_t * base;
 
-    memset(&RTE_PER_LCORE(tvec_bases), 0, sizeof(tvec_base_t));
+    memset(tvec_bases, 0, sizeof(tvec_base_t));
 
-    base = &(RTE_PER_LCORE(tvec_bases));
+    base = tvec_bases;
     for(j = 0; j < TVN_SIZE; j++) {
         INIT_LIST_HEAD(base->tv5.vec + j);
         INIT_LIST_HEAD(base->tv4.vec + j);
@@ -224,7 +194,7 @@ void dkfw_init_timers(unsigned long absms)
 
 // ============ wrapper ===========
 
-int dkfw_start_timer(struct timer_list *timer, linux_timer_cb_t cb, void *arg, unsigned long absms)
+int dkfw_start_timer(tvec_base_t *tvec_bases, struct timer_list *timer, linux_timer_cb_t cb, void *arg, unsigned long absms)
 {
     init_timer(timer);
 
@@ -232,16 +202,16 @@ int dkfw_start_timer(struct timer_list *timer, linux_timer_cb_t cb, void *arg, u
     timer->data = (unsigned long)arg;
     timer->expires = absms;
 
-    __mod_timer(timer, timer->expires);
+    __mod_timer(tvec_bases, timer, timer->expires);
 
     return 0;
 }
 
-int dkfw_restart_timer(struct timer_list *timer, unsigned long absms)
+int dkfw_restart_timer(tvec_base_t *tvec_bases, struct timer_list *timer, unsigned long absms)
 {
     timer->expires = absms;
 
-    __mod_timer(timer, timer->expires);
+    __mod_timer(tvec_bases, timer, timer->expires);
 
     return 0;
 }
