@@ -47,23 +47,3 @@ int dkfw_stats_add_item(DKFW_STATS *stat, int id, int type, const char *keyname)
     return 0;
 }
 
-void dkfw_stats_cnt_incr(DKFW_STATS *stat, int id, int core)
-{
-    stat->stat_items[id].stat_cores[core].count++;
-}
-
-void dkfw_stats_resource_pool_alloc_succ_incr(DKFW_STATS *stat, int id, int core)
-{
-    stat->stat_items[id].stat_cores[core].resource_pool.alloc_succ++;
-}
-
-void dkfw_stats_resource_pool_alloc_fail_incr(DKFW_STATS *stat, int id, int core)
-{
-    stat->stat_items[id].stat_cores[core].resource_pool.alloc_fail++;
-}
-
-void dkfw_stats_resource_pool_alloc_free_incr(DKFW_STATS *stat, int id, int core)
-{
-    stat->stat_items[id].stat_cores[core].resource_pool.free++;
-}
-

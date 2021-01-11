@@ -36,10 +36,11 @@ typedef struct DKFW_STATS_TAG {
 
 extern DKFW_STATS *dkfw_stats_create(int core_cnt, int max_id);
 extern int dkfw_stats_add_item(DKFW_STATS *stat, int id, int type, const char *keyname);
-extern void dkfw_stats_cnt_incr(DKFW_STATS *stat, int id, int core);
-extern void dkfw_stats_resource_pool_alloc_succ_incr(DKFW_STATS *stat, int id, int core);
-extern void dkfw_stats_resource_pool_alloc_fail_incr(DKFW_STATS *stat, int id, int core);
-extern void dkfw_stats_resource_pool_alloc_free_incr(DKFW_STATS *stat, int id, int core);
+
+#define DKFW_STATS_CNT_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].count++
+#define DKFW_STATS_RESOURCE_POOL_ALLOC_SUCC_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ++
+#define DKFW_STATS_RESOURCE_POOL_ALLOC_FAIL_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_fail++
+#define DKFW_STATS_RESOURCE_POOL_ALLOC_FREE_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.free++
 
 #endif
 
