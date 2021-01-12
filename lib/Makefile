@@ -2,7 +2,7 @@ LIBNAME=libdkfw.a
 
 LIBS=-L${RTE_SDK}/${RTE_TARGET}/lib -Wl,--whole-archive,-ldpdk,--no-whole-archive -lrt -lm -ldl -lcrypto -pthread -lnuma -fpic
 INCLUDE=-I. -I/usr/include -I${RTE_SDK}/${RTE_TARGET}/include -I./include
-DEPS=-Wall -march=native
+DEPS=-Wall -Wextra -march=native
 
 ifeq ($(D),1)
 OPTIMIZE=-O0
