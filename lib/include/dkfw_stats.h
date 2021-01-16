@@ -31,11 +31,14 @@ typedef struct DKFW_STATS_TAG {
     int core_cnt;
     int max_id;
 
-    DKFW_ST_ITEM *stat_items;
+    DKFW_ST_ITEM stat_items[0];
 } DKFW_STATS;
 
 extern DKFW_STATS *dkfw_stats_create(int core_cnt, int max_id);
+extern int dkfw_stats_create_with_address(DKFW_STATS *stats, int core_cnt, int max_id);
 extern int dkfw_stats_add_item(DKFW_STATS *stat, int id, int type, const char *keyname);
+extern int dkfw_stats_config_dup(DKFW_STATS *stat, DKFW_STATS *stat_dst);
+extern int dkfw_stats_cores_sum(DKFW_STATS *stat, DKFW_STATS *stat_sum);
 
 #define DKFW_STATS_CNT_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].count++
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_SUCC_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ++
