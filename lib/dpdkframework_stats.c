@@ -26,10 +26,10 @@ int dkfw_stats_create_with_address(DKFW_STATS *stats, int core_cnt, int max_id)
 {
     int size = sizeof(DKFW_STATS) + sizeof(DKFW_ST_ITEM) * max_id;
 
+    memset(stats, 0, size);
+
     stats->core_cnt = core_cnt;
     stats->max_id = max_id;
-
-    memset(stats, 0, size);
 
     return size;
 }
@@ -97,5 +97,58 @@ int dkfw_stats_cores_sum(DKFW_STATS *stat, DKFW_STATS *stat_sum)
     }
 
     return 0;
+}
+
+static cJSON *stats_to_json_one_value(DKFW_ST_CORE *item, int type)
+{
+    cJSON *ret = NULL;
+    char buff[64];
+
+    if(type == DKFW_STATS_TYPE_NUM){
+        sprintf(buff, "%lu", item->count);
+        ret = cJSON_CreateString(buff);
+    }else if(type == DKFW_STATS_TYPE_RESOURCE_POOL){
+        ret = cJSON_CreateObject();
+        sprintf(buff, "%lu", item->resource_pool.alloc_succ);
+        cJSON_AddItemToObject(ret, "alloc_succ", cJSON_CreateString(buff));
+        sprintf(buff, "%lu", item->resource_pool.alloc_fail);
+        cJSON_AddItemToObject(ret, "alloc_fail", cJSON_CreateString(buff));
+        sprintf(buff, "%lu", item->resource_pool.free);
+        cJSON_AddItemToObject(ret, "free", cJSON_CreateString(buff));
+    }
+
+    return ret;
+}
+
+static cJSON *stats_to_json_one_core(DKFW_STATS *stat, int core_seq)
+{
+    int id;
+    cJSON *root = cJSON_CreateObject();
+    cJSON *json;
+    DKFW_ST_ITEM *item;
+
+    for(id=0;id<stat->max_id;id++){
+        item = &stat->stat_items[id];
+        json = stats_to_json_one_value(&item->stat_cores[core_seq], item->type);
+        cJSON_AddItemToObject(root, item->keyname, json);
+    }
+
+    return root;
+}
+
+cJSON *dkfw_stats_to_json(DKFW_STATS *stat)
+{
+    int core;
+    char buff[64];
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddItemToObject(root, "core_cnt", cJSON_CreateNumber(stat->core_cnt));
+
+    for(core=0;core<stat->core_cnt;core++){
+        sprintf(buff, "core_%d", core);
+        cJSON_AddItemToObject(root, buff, stats_to_json_one_core(stat, core));
+    }
+
+    return root;
 }
 

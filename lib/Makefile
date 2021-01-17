@@ -1,6 +1,6 @@
 LIBNAME=libdkfw.a
 
-LIBS=-L${RTE_SDK}/${RTE_TARGET}/lib -Wl,--whole-archive,-ldpdk,--no-whole-archive -lrt -lm -ldl -lcrypto -pthread -lnuma -fpic
+LIBS=-L${RTE_SDK}/${RTE_TARGET}/lib -Wl,--whole-archive,-ldpdk,--no-whole-archive -lrt -lm -ldl -lcrypto -pthread -lnuma -lcjson -fpic
 INCLUDE=-I. -I/usr/include -I${RTE_SDK}/${RTE_TARGET}/include -I./include
 DEPS=-Wall -Wextra -march=native
 

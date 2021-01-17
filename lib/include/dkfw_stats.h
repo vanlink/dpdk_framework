@@ -1,6 +1,7 @@
 #ifndef _DPDK_FRAMEWORK_STATS_H
 #define _DPDK_FRAMEWORK_STATS_H
 #include "dkfw_config.h"
+#include "cjson/cJSON.h"
 
 #define DKFW_STATS_KEYNAME_LEN 32
 
@@ -39,6 +40,7 @@ extern int dkfw_stats_create_with_address(DKFW_STATS *stats, int core_cnt, int m
 extern int dkfw_stats_add_item(DKFW_STATS *stat, int id, int type, const char *keyname);
 extern int dkfw_stats_config_dup(DKFW_STATS *stat, DKFW_STATS *stat_dst);
 extern int dkfw_stats_cores_sum(DKFW_STATS *stat, DKFW_STATS *stat_sum);
+cJSON *dkfw_stats_to_json(DKFW_STATS *stat);
 
 #define DKFW_STATS_CNT_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].count++
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_SUCC_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ++
