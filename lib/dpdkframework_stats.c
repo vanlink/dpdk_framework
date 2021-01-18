@@ -92,6 +92,9 @@ int dkfw_stats_cores_sum(DKFW_STATS *stat, DKFW_STATS *stat_sum)
                 item_sum->stat_cores[0].resource_pool.alloc_succ += item->stat_cores[core].resource_pool.alloc_succ;
                 item_sum->stat_cores[0].resource_pool.alloc_fail += item->stat_cores[core].resource_pool.alloc_fail;
                 item_sum->stat_cores[0].resource_pool.free += item->stat_cores[core].resource_pool.free;
+
+                item_sum->stat_cores[0].resource_pool.want_succ += item->stat_cores[core].resource_pool.want_succ;
+                item_sum->stat_cores[0].resource_pool.want_fail += item->stat_cores[core].resource_pool.want_fail;
             }
         }
     }
@@ -115,6 +118,11 @@ static cJSON *stats_to_json_one_value(DKFW_ST_CORE *item, int type)
         cJSON_AddItemToObject(ret, "alloc_fail", cJSON_CreateString(buff));
         sprintf(buff, "%lu", item->resource_pool.free);
         cJSON_AddItemToObject(ret, "free", cJSON_CreateString(buff));
+
+        sprintf(buff, "%lu", item->resource_pool.want_succ);
+        cJSON_AddItemToObject(ret, "want_succ", cJSON_CreateString(buff));
+        sprintf(buff, "%lu", item->resource_pool.want_fail);
+        cJSON_AddItemToObject(ret, "want_fail", cJSON_CreateString(buff));
     }
 
     return ret;
@@ -129,6 +137,9 @@ static cJSON *stats_to_json_one_core(DKFW_STATS *stat, int core_seq)
 
     for(id=0;id<stat->max_id;id++){
         item = &stat->stat_items[id];
+        if(!item->keyname[0]){
+            continue;
+        }
         json = stats_to_json_one_value(&item->stat_cores[core_seq], item->type);
         cJSON_AddItemToObject(root, item->keyname, json);
     }
