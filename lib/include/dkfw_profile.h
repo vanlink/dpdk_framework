@@ -1,12 +1,13 @@
 #ifndef _DPDK_FRAMEWORK_PROFILE_H
 #define _DPDK_FRAMEWORK_PROFILE_H
 #include <stdint.h>
+#include "cjson/cJSON.h"
 
 #define MAX_PROFILE_ITEM_NUM 16
 
 typedef struct _DKFW_PROFILE_TAG {
     int item_cnt;
-    
+
     uint64_t loops_cnt;
 
     uint64_t all_time;
@@ -17,8 +18,9 @@ typedef struct _DKFW_PROFILE_TAG {
 } DKFW_PROFILE;
 
 extern void dkfw_profile_init(DKFW_PROFILE *profile, int item_cnt);
+extern cJSON *dkfw_profile_to_json(DKFW_PROFILE *profile);
 
-#define DKFW_PROFILE_START(profile,t) do { (profile)->tmp_start = t } while(0)
+#define DKFW_PROFILE_START(profile,t) do { (profile)->tmp_start = t; } while(0)
 #define DKFW_PROFILE_END(profile,t) do { \
     (profile)->loops_cnt++; \
     (profile)->all_time += ((t) - (profile)->tmp_start); } while(0)
