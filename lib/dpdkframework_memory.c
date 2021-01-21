@@ -20,19 +20,19 @@ int global_init_sharemem(void)
 {
     void *global_shared_mem = NULL;
     char buff[128];
-    int size = 2*1024*1024;
+    int size = DKFW_GLOBAL_SHARED_MEM_SIZE;
 
     get_sharemem_name(buff);
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
         printf("Create ");
-        global_shared_mem_rte = rte_memzone_reserve_aligned(buff, size, SOCKET_ID_ANY, 0, 64);
+        global_shared_mem_rte = rte_memzone_reserve_aligned(buff, size, SOCKET_ID_ANY, 0, RTE_CACHE_LINE_SIZE);
     }else{
         printf("Lookup ");
         global_shared_mem_rte = rte_memzone_lookup(buff);
     }
 
-    printf("global shared mem [%s] ... ", buff);
+    printf("global shared mem=[%s] size=[%d] ... ", buff, size);
     
     if(!global_shared_mem_rte){
         printf("fail.\n");
@@ -42,7 +42,7 @@ int global_init_sharemem(void)
     global_shared_mem = global_shared_mem_rte->addr;
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-        memset(global_shared_mem, 0, size / 2);
+        memset(global_shared_mem, 0, size);
     }
 
     return 0;

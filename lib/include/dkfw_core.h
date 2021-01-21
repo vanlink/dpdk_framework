@@ -4,6 +4,8 @@
 #include <rte_ring.h>
 #include <rte_mbuf.h>
 
+#define DKFW_CORE_SHARED_MEM_SIZE (2 * 1024 *1024)
+
 // 数据包接收数列
 typedef struct _DKFW_RING_TAG {
     struct rte_ring *dkfw_ring;  // dpdk 提供的无锁队列

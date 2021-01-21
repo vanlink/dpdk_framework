@@ -64,13 +64,13 @@ static int core_init_sharemem(DKFW_CORE *core)
 
     if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
         printf("Create ");
-        core->core_shared_mem_rte = rte_memzone_reserve_aligned(buff, 1*1024*1024, SOCKET_ID_ANY, 0, 64);
+        core->core_shared_mem_rte = rte_memzone_reserve_aligned(buff, DKFW_CORE_SHARED_MEM_SIZE, SOCKET_ID_ANY, 0, RTE_CACHE_LINE_SIZE);
     }else{
         printf("Lookup ");
         core->core_shared_mem_rte = rte_memzone_lookup(buff);
     }
 
-    printf("core shared mem [%s] ... ", buff);
+    printf("core shared mem=[%s] size=[%d] ... ", buff, DKFW_CORE_SHARED_MEM_SIZE);
     
     if(!core->core_shared_mem_rte){
         printf("fail.\n");
