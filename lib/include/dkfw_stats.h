@@ -8,6 +8,7 @@
 #define DKFW_STATS_TYPE_NONE          0
 #define DKFW_STATS_TYPE_NUM           1
 #define DKFW_STATS_TYPE_RESOURCE_POOL 2
+#define DKFW_STATS_TYPE_PAIR          3
 
 typedef struct DKFW_ST_RESOURCE_POOL_TAG {
     unsigned long alloc_succ;
@@ -18,10 +19,16 @@ typedef struct DKFW_ST_RESOURCE_POOL_TAG {
     unsigned long want_fail;
 } DKFW_ST_RESOURCE_POOL;
 
+typedef struct DKFW_ST_PAIR_TAG {
+    unsigned long start;
+    unsigned long stop;
+} DKFW_ST_PAIR;
+
 typedef struct DKFW_ST_CORE_TAG {
     union {
         unsigned long count;
         DKFW_ST_RESOURCE_POOL resource_pool;
+        DKFW_ST_PAIR pair;
     };
 } DKFW_ST_CORE;
 
@@ -47,10 +54,12 @@ cJSON *dkfw_stats_to_json(DKFW_STATS *stat);
 
 #define DKFW_STATS_CNT_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].count++
 
+#define DKFW_STATS_PAIR_START_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].pair.start++
+#define DKFW_STATS_PAIR_STOP_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].pair.stop++
+
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_SUCC_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ++
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_FAIL_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_fail++
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_FREE_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.free++
-
 #define DKFW_STATS_RESOURCE_POOL_WANT_SUCCE_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.want_succ++
 #define DKFW_STATS_RESOURCE_POOL_WANT_FAIL_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.want_fail++
 

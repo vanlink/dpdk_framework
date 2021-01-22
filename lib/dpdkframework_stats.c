@@ -95,6 +95,9 @@ int dkfw_stats_cores_sum(DKFW_STATS *stat, DKFW_STATS *stat_sum)
 
                 item_sum->stat_cores[0].resource_pool.want_succ += item->stat_cores[core].resource_pool.want_succ;
                 item_sum->stat_cores[0].resource_pool.want_fail += item->stat_cores[core].resource_pool.want_fail;
+            }else if(item->type == DKFW_STATS_TYPE_PAIR){
+                item_sum->stat_cores[0].pair.start += item->stat_cores[core].pair.start;
+                item_sum->stat_cores[0].pair.stop += item->stat_cores[core].pair.stop;
             }
         }
     }
@@ -123,6 +126,12 @@ static cJSON *stats_to_json_one_value(DKFW_ST_CORE *item, int type)
         cJSON_AddItemToObject(ret, "want_succ", cJSON_CreateString(buff));
         sprintf(buff, "%lu", item->resource_pool.want_fail);
         cJSON_AddItemToObject(ret, "want_fail", cJSON_CreateString(buff));
+    }else if(type == DKFW_STATS_TYPE_PAIR){
+        ret = cJSON_CreateObject();
+        sprintf(buff, "%lu", item->pair.start);
+        cJSON_AddItemToObject(ret, "start", cJSON_CreateString(buff));
+        sprintf(buff, "%lu", item->pair.stop);
+        cJSON_AddItemToObject(ret, "stop", cJSON_CreateString(buff));
     }
 
     return ret;
