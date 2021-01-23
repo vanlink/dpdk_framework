@@ -6,6 +6,10 @@ typedef struct DKFW_CPS_TAG {
     uint64_t cps;
     uint64_t tsc_last;
     uint64_t tsc_per_sec;
+
+    uint64_t send_cnt_curr;
+    uint64_t send_cnt_max;
+
 } DKFW_CPS;
 
 extern void dkfw_cps_create(DKFW_CPS *dkfwcps, uint64_t cps, uint64_t tsc_per_sec);

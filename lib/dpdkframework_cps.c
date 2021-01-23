@@ -24,6 +24,12 @@ uint64_t dkfw_cps_get(DKFW_CPS *dkfwcps, uint64_t tsc)
         return 0;
     }
 
+    if(unlikely(dkfwcps->send_cnt_max)){
+        if(dkfwcps->send_cnt_curr >= dkfwcps->send_cnt_max){
+            return 0;
+        }
+    }
+
     diff = (tsc - dkfwcps->tsc_last) * dkfwcps->cps;
 
     if(likely(diff < dkfwcps->tsc_per_sec)){
@@ -33,6 +39,10 @@ uint64_t dkfw_cps_get(DKFW_CPS *dkfwcps, uint64_t tsc)
     cnt = diff / dkfwcps->tsc_per_sec;
 
     dkfwcps->tsc_last += dkfwcps->tsc_per_sec * cnt / dkfwcps->cps;
+
+    if(unlikely(dkfwcps->send_cnt_max)){
+        dkfwcps->send_cnt_curr += cnt;
+    }
 
     return cnt;
 }
