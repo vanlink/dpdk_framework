@@ -24,12 +24,6 @@ uint64_t dkfw_cps_get(DKFW_CPS *dkfwcps, uint64_t tsc)
         return 0;
     }
 
-    if(unlikely(dkfwcps->send_cnt_max)){
-        if(dkfwcps->send_cnt_curr >= dkfwcps->send_cnt_max){
-            return 0;
-        }
-    }
-
     diff = (tsc - dkfwcps->tsc_last) * dkfwcps->cps;
 
     if(likely(diff < dkfwcps->tsc_per_sec)){
@@ -40,10 +34,31 @@ uint64_t dkfw_cps_get(DKFW_CPS *dkfwcps, uint64_t tsc)
 
     dkfwcps->tsc_last += dkfwcps->tsc_per_sec * cnt / dkfwcps->cps;
 
-    if(unlikely(dkfwcps->send_cnt_max)){
-        dkfwcps->send_cnt_curr += cnt;
+    return cnt;
+}
+
+uint64_t dkfw_cps_limited_get(DKFW_CPS *dkfwcps, uint64_t tsc)
+{
+    uint64_t cnt = dkfw_cps_get(dkfwcps, tsc);
+
+    if(likely(cnt == 0)){
+        if(unlikely(dkfwcps->send_cnt_remain)){
+            dkfwcps->send_cnt_remain--;
+            return 1;
+        }
+        return 0;
     }
 
-    return cnt;
+    if(likely(cnt == 1)){
+        return 1;
+    }
+
+    dkfwcps->send_cnt_remain += (cnt - 1);
+
+    if(dkfwcps->send_cnt_remain > 64){
+        dkfwcps->send_cnt_remain = 64;
+    }
+
+    return 1;
 }
 
