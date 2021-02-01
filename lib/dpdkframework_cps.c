@@ -96,3 +96,8 @@ uint64_t dkfw_cps_limited_get(DKFW_CPS *dkfwcps, uint64_t tsc, uint64_t ms)
     return 1;
 }
 
+uint64_t dkfw_cps_abs_value_get(DKFW_CPS *dkfwcps, uint64_t ms)
+{
+    return get_curr_cps(dkfwcps, ms);
+}
+

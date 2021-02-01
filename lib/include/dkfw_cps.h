@@ -27,6 +27,6 @@ typedef struct DKFW_CPS_TAG {
 extern void dkfw_cps_create(DKFW_CPS *dkfwcps, uint64_t tsc_per_sec);
 extern uint64_t dkfw_cps_get(DKFW_CPS *dkfwcps, uint64_t tsc, uint64_t ms);
 extern uint64_t dkfw_cps_limited_get(DKFW_CPS *dkfwcps, uint64_t tsc, uint64_t ms);
-
+extern uint64_t dkfw_cps_abs_value_get(DKFW_CPS *dkfwcps, uint64_t ms);
 #endif
 
