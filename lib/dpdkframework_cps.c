@@ -7,11 +7,10 @@
 
 #include "dkfw_cps.h"
 
-void dkfw_cps_create(DKFW_CPS *dkfwcps, uint64_t cps, uint64_t tsc_per_sec)
+void dkfw_cps_create(DKFW_CPS *dkfwcps, uint64_t tsc_per_sec)
 {
     memset(dkfwcps, 0, sizeof(DKFW_CPS));
 
-    dkfwcps->cps = cps;
     dkfwcps->tsc_per_sec = tsc_per_sec;
 }
 

@@ -14,17 +14,17 @@ typedef struct DKFW_CPS_SEG_TAG {
 } DKFW_CPS_SEG;
 
 typedef struct DKFW_CPS_TAG {
-    uint64_t cps;
     uint64_t tsc_last;
     uint64_t tsc_per_sec;
 
     uint64_t send_cnt_remain;
 
+    int cps_segs_cnt;
     int cps_seg_curr_ind;
-    DKFW_CPS_SEG cps_segs[DKFW_CPS_SEGS_MAX];
+    DKFW_CPS_SEG cps_segs[DKFW_CPS_SEGS_MAX + 2];
 } DKFW_CPS;
 
-extern void dkfw_cps_create(DKFW_CPS *dkfwcps, uint64_t cps, uint64_t tsc_per_sec);
+extern void dkfw_cps_create(DKFW_CPS *dkfwcps, uint64_t tsc_per_sec);
 extern uint64_t dkfw_cps_get(DKFW_CPS *dkfwcps, uint64_t tsc, uint64_t ms);
 extern uint64_t dkfw_cps_limited_get(DKFW_CPS *dkfwcps, uint64_t tsc, uint64_t ms);
 
