@@ -11,6 +11,7 @@
 #include <rte_mbuf.h>
 #include <rte_mempool.h>
 
+#include "dkfw_config.h"
 #include "dkfw_intf.h"
 
 static DKFW_INTF g_dkfw_interfaces[MAX_PCI_NUM];
@@ -437,7 +438,10 @@ int dkfw_rcv_pkt_from_interface(int intf_seq, int q_num, struct rte_mbuf **pkts_
     int rx;
     
     rx = rte_eth_rx_burst(intf_seq, q_num, pkts_burst, max_pkts_num);
+
+#if DKFW_STATS_ENABLED
     g_dkfw_interfaces[intf_seq].stats_rcv_pkts_cnt[q_num] += rx;
+#endif
 
     return rx;
 }

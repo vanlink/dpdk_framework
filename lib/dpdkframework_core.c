@@ -10,6 +10,7 @@
 #include <rte_common.h>
 #include <rte_mbuf.h>
 
+#include "dkfw_config.h"
 #include "dkfw_core.h"
 #include "dkfw_ipc.h"
 
@@ -340,11 +341,16 @@ int dkfw_send_pkt_to_process_core_q(int process_core_seq, int core_q_num, struct
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
 
     if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, mbuf) == 0)){
+
+#if DKFW_STATS_ENABLED
         ring->stats_enq_cnt++;
+#endif
         return 0;
     }
 
+#if DKFW_STATS_ENABLED
     ring->stats_enq_err_cnt++;
+#endif
 
     return -1;
 }
@@ -372,7 +378,9 @@ int dkfw_rcv_pkt_from_process_core_q(int process_core_seq, int core_q_num, struc
     DKFW_RING *ring = &g_pkt_process_core[process_core_seq].pkts_to_me_q[core_q_num];
     int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
 
+#if DKFW_STATS_ENABLED
     ring->stats_deq_cnt += nb_rx;
+#endif
 
     return nb_rx;
 }
@@ -394,11 +402,17 @@ int dkfw_send_data_to_other_core_q(int core_seq, int core_q_num, void *data)
     DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
 
     if(likely(rte_ring_sp_enqueue(ring->dkfw_ring, data) == 0)){
+
+#if DKFW_STATS_ENABLED
         ring->stats_enq_cnt++;
+#endif
+
         return 0;
     }
-    
+
+#if DKFW_STATS_ENABLED
     ring->stats_enq_err_cnt++;
+#endif
 
     return -1;
 }
@@ -421,7 +435,9 @@ int dkfw_rcv_data_from_other_core_q(int core_seq, int core_q_num, void **data_bu
     DKFW_RING *ring = &g_other_core[core_seq].data_to_me_q[core_q_num];
     int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, data_burst, max_data_num, NULL);
 
+#if DKFW_STATS_ENABLED
     ring->stats_deq_cnt += nb_rx;
+#endif
 
     return nb_rx;
 }
@@ -457,7 +473,9 @@ int dkfw_rcv_from_pcap_core_q(int core_seq, struct rte_mbuf **pkts_burst, int ma
 
     int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
 
+#if DKFW_STATS_ENABLED
     ring->stats_deq_cnt += nb_rx;
+#endif
 
     return nb_rx;
 }
