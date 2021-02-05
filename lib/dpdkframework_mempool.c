@@ -52,8 +52,8 @@ void *dkfw_mempool_alloc(DKFW_MEMPOOL *pool)
         return NULL;
     }
 
-    pool->list = pool->list->next;
     header = pool->list;
+    pool->list = pool->list->next;
     header->next = NULL;
 
     return (char *)header + HEADER_SIZE;
