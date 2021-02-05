@@ -264,19 +264,29 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     if(rxq_num > 1){
         port_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
         port_conf.rx_adv_conf.rss_conf.rss_hf = (ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP) & dev_info.flow_type_rss_offloads;
-        if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
-            printf("Set Symmetric RSS for 40G netcard step 1.\n");
-        }else{
-            printf("Set Symmetric RSS for 10G netcard.\n");
-            port_conf.rx_adv_conf.rss_conf.rss_key = hash_key;
-            port_conf.rx_adv_conf.rss_conf.rss_key_len = RSS_HASH_KEY_LENGTH;
+
+        if(config->nic_symmetric_rss_enable){
+            if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
+                printf("Set Symmetric RSS for 40G netcard step 1.\n");
+            }else{
+                printf("Set Symmetric RSS for 10G netcard.\n");
+                port_conf.rx_adv_conf.rss_conf.rss_key = hash_key;
+                port_conf.rx_adv_conf.rss_conf.rss_key_len = RSS_HASH_KEY_LENGTH;
+            }
         }
     }
 
-    // 使能混杂模式
-    rte_eth_promiscuous_enable(port_ind);
-    // 接收组播包
-    rte_eth_allmulticast_enable(port_ind);
+    if(config->nic_promiscuous_enable){
+        // 使能混杂模式
+        printf("Set promiscuous enable.\n");
+        rte_eth_promiscuous_enable(port_ind);
+    }
+
+    if(config->nic_allmulticast_enable){
+        // 接收组播包
+        printf("Set allmulticast enable.\n");
+        rte_eth_allmulticast_enable(port_ind);
+    }
 
     // 配置网卡
     ret = rte_eth_dev_configure(port_ind, rxq_num, txq_num, &port_conf);
@@ -285,7 +295,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         return -1;
     }
 
-    if(rxq_num > 1){
+    if((rxq_num > 1) && config->nic_symmetric_rss_enable){
         if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
             printf("Set Symmetric RSS for 40G netcard step 2.\n");
             if(sym_hash_enable(port_ind, RTE_ETH_FLOW_NONFRAG_IPV4_TCP, RTE_ETH_HASH_FUNCTION_TOEPLITZ) < 0){
@@ -351,6 +361,8 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     rte_eth_led_on(port_ind);
     // 使能网卡，链路UP
     rte_eth_dev_set_link_up(port_ind);
+    // 检测链路up状态
+    check_port_link_status(port_ind);
 
     // 开始收包
     ret = rte_eth_dev_start(port_ind);
@@ -358,9 +370,6 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         printf("rte_eth_dev_start err\n");
         return -1;
     }
-
-    // 检测链路up状态
-    check_port_link_status(port_ind);
 
     return 0;
 }

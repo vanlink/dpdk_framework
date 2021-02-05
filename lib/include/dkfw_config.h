@@ -39,6 +39,10 @@ typedef struct _PCI_CONFIG_TAG {
     int nic_hw_strip_vlan;
     int nic_hw_strip_qinq;
 
+    int nic_symmetric_rss_enable;
+    int nic_promiscuous_enable;
+    int nic_allmulticast_enable;
+
     int nic_tx_desc;
     int nic_rx_desc;
 
