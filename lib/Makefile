@@ -14,7 +14,9 @@ endif
 
 build: ${LIBNAME}
 
-OBJS=dpdkframework.o dpdkframework_intf.o dpdkframework_core.o dpdkframework_profile.o dpdkframework_ipc.o dpdkframework_timer.o dpdkframework_memory.o dpdkframework_stats.o dpdkframework_cps.o
+OBJS=dpdkframework.o dpdkframework_intf.o dpdkframework_core.o dpdkframework_profile.o \
+      dpdkframework_ipc.o dpdkframework_timer.o dpdkframework_memory.o dpdkframework_stats.o dpdkframework_cps.o \
+      dpdkframework_mempool.o
 
 ${LIBNAME}: ${OBJS}
 	ar crv $@ ${OBJS}
@@ -45,6 +47,9 @@ dpdkframework_stats.o: dpdkframework_stats.c
 
 dpdkframework_cps.o: dpdkframework_cps.c
 	gcc -g ${OPTIMIZE} ${DEPS} ${INCLUDE} ${LIBS} -c dpdkframework_cps.c
+
+dpdkframework_mempool.o: dpdkframework_mempool.c
+	gcc -g ${OPTIMIZE} ${DEPS} ${INCLUDE} ${LIBS} -c dpdkframework_mempool.c
 
 clean:
 	rm -f *.o ${LIBNAME}
