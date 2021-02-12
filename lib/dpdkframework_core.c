@@ -102,7 +102,7 @@ static int process_core_init_one(DKFW_CORE *core, int to_me_q_num)
 
         // dpdk主进程创建队列，其他进程查找队列
         if (rte_eal_process_type() == RTE_PROC_PRIMARY) {
-            core->pkts_to_me_q[i].dkfw_ring = rte_ring_create(buff, 65536 * 2, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
+            core->pkts_to_me_q[i].dkfw_ring = rte_ring_create(buff, 8192, SOCKET_ID_ANY, RING_F_SP_ENQ | RING_F_SC_DEQ);
         } else {
             core->pkts_to_me_q[i].dkfw_ring = rte_ring_lookup(buff);
         }
