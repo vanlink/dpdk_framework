@@ -36,11 +36,25 @@ cJSON *dkfw_profile_to_json(DKFW_PROFILE *profile)
     cJSON_AddItemToObject(root, "items_time", json_array);
 
     json_array = cJSON_CreateArray();
+    for(i=0;i<profile->item_cnt;i++){
+        sprintf(buff, "%lu", profile->items_time_cnt[i]);
+        cJSON_AddItemToArray(json_array, cJSON_CreateString(buff));
+    }
+    cJSON_AddItemToObject(root, "items_time_cnt", json_array);
+
+    json_array = cJSON_CreateArray();
     for(i=0;i<profile->single_cnt;i++){
         sprintf(buff, "%lu", profile->single_time[i]);
         cJSON_AddItemToArray(json_array, cJSON_CreateString(buff));
     }
     cJSON_AddItemToObject(root, "singles_time", json_array);
+
+    json_array = cJSON_CreateArray();
+    for(i=0;i<profile->single_cnt;i++){
+        sprintf(buff, "%lu", profile->single_time_cnt[i]);
+        cJSON_AddItemToArray(json_array, cJSON_CreateString(buff));
+    }
+    cJSON_AddItemToObject(root, "singles_time_cnt", json_array);
 
     return root;
 }
