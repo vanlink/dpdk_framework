@@ -3,7 +3,7 @@
 
 #include <rte_launch.h>
 
-#define DKFW_STATS_ENABLED   1
+#define DKFW_STATS_ENABLED   0
 
 #define MAX_JUMBO_FRAME_SIZE 9500
 

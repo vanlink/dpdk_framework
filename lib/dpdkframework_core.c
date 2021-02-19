@@ -466,11 +466,6 @@ int dkfw_send_to_pcap_core_ring(struct rte_ring *dkfw_ring, void *data)
 int dkfw_rcv_from_pcap_core_q(int core_seq, struct rte_mbuf **pkts_burst, int max_pkts_num)
 {
     DKFW_RING *ring = &g_pkt_distribute_core[core_seq].pcap_to_me_q;
-
-    if(likely(rte_ring_empty(ring->dkfw_ring))){
-        return 0;
-    }
-
     int nb_rx = rte_ring_sc_dequeue_burst(ring->dkfw_ring, (void **)pkts_burst, max_pkts_num, NULL);
 
 #if DKFW_STATS_ENABLED
