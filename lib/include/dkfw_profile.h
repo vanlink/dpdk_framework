@@ -4,7 +4,7 @@
 #include "cjson/cJSON.h"
 
 #define MAX_PROFILE_ITEM_NUM 16
-#define DKFW_PROFILE_LOOP_CNT 1
+#define DKFW_PROFILE_LOOP_CNT 0
 
 typedef struct _DKFW_PROFILE_TAG {
 
