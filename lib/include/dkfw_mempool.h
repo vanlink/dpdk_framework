@@ -1,12 +1,11 @@
 #ifndef _DPDK_FRAMEWORK_MEMPOOL_H
 #define _DPDK_FRAMEWORK_MEMPOOL_H
-#include <rte_mempool.h>
 
 typedef struct _DKFW_MEMHEADER_t DKFW_MEMHEADER;
 
 typedef struct _DKFW_MEMPOOL_t {
-    DKFW_MEMHEADER *list;
-    struct rte_mempool *dpdk_mempool;
+    DKFW_MEMHEADER *first_header;
+    char *pool_mem;
 } DKFW_MEMPOOL;
 
 typedef struct _DKFW_MEMHEADER_t {
