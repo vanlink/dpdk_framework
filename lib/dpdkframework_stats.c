@@ -122,6 +122,9 @@ static cJSON *stats_to_json_one_value(DKFW_ST_CORE *item, int type)
         sprintf(buff, "%lu", item->resource_pool.free);
         cJSON_AddItemToObject(ret, "free", cJSON_CreateString(buff));
 
+        sprintf(buff, "%lu", item->resource_pool.alloc_succ - item->resource_pool.free);
+        cJSON_AddItemToObject(ret, "CONCURR", cJSON_CreateString(buff));
+
         sprintf(buff, "%lu", item->resource_pool.want_succ);
         cJSON_AddItemToObject(ret, "want_succ", cJSON_CreateString(buff));
         sprintf(buff, "%lu", item->resource_pool.want_fail);
@@ -132,6 +135,9 @@ static cJSON *stats_to_json_one_value(DKFW_ST_CORE *item, int type)
         cJSON_AddItemToObject(ret, "start", cJSON_CreateString(buff));
         sprintf(buff, "%lu", item->pair.stop);
         cJSON_AddItemToObject(ret, "stop", cJSON_CreateString(buff));
+
+        sprintf(buff, "%lu", item->pair.start - item->pair.stop);
+        cJSON_AddItemToObject(ret, "CONCURR", cJSON_CreateString(buff));
     }
 
     return ret;
