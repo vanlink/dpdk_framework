@@ -3,6 +3,8 @@
 #include "dkfw_config.h"
 #include "cjson/cJSON.h"
 
+#define DKFW_STATS_CONF_PEAK 0
+
 #define DKFW_STATS_KEYNAME_LEN 32
 
 #define DKFW_STATS_TYPE_NONE          0
@@ -15,6 +17,8 @@ typedef struct DKFW_ST_RESOURCE_POOL_TAG {
     unsigned long alloc_fail;
     unsigned long free;
 
+    unsigned long peak;
+
     unsigned long want_succ;
     unsigned long want_fail;
 } DKFW_ST_RESOURCE_POOL;
@@ -22,6 +26,8 @@ typedef struct DKFW_ST_RESOURCE_POOL_TAG {
 typedef struct DKFW_ST_PAIR_TAG {
     unsigned long start;
     unsigned long stop;
+
+    unsigned long peak;
 } DKFW_ST_PAIR;
 
 typedef struct DKFW_ST_CORE_TAG {
@@ -53,11 +59,29 @@ extern int dkfw_stats_cores_sum(DKFW_STATS *stat, DKFW_STATS *stat_sum);
 cJSON *dkfw_stats_to_json(DKFW_STATS *stat);
 
 #define DKFW_STATS_CNT_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].count++
-
+#if DKFW_STATS_CONF_PEAK
+#define DKFW_STATS_PAIR_START_INCR(stat,id,core) do {      \
+    unsigned long __tmp;                                   \
+    (stat)->stat_items[id].stat_cores[core].pair.start++;  \
+    __tmp = (stat)->stat_items[id].stat_cores[core].pair.start - (stat)->stat_items[id].stat_cores[core].pair.stop; \
+    if(__tmp > (stat)->stat_items[id].stat_cores[core].pair.peak){ (stat)->stat_items[id].stat_cores[core].pair.peak = __tmp; } \
+} while(0)
+#else
 #define DKFW_STATS_PAIR_START_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].pair.start++
+#endif
 #define DKFW_STATS_PAIR_STOP_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].pair.stop++
 
+#if DKFW_STATS_CONF_PEAK
+#define DKFW_STATS_RESOURCE_POOL_ALLOC_SUCC_INCR(stat,id,core) do {      \
+    unsigned long __tmp;                                                 \
+    (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ++;  \
+    __tmp = (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ - (stat)->stat_items[id].stat_cores[core].resource_pool.free; \
+    if(__tmp > (stat)->stat_items[id].stat_cores[core].resource_pool.peak){ (stat)->stat_items[id].stat_cores[core].resource_pool.peak = __tmp; } \
+} while(0)
+#else
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_SUCC_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_succ++
+#endif
+
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_FAIL_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.alloc_fail++
 #define DKFW_STATS_RESOURCE_POOL_ALLOC_FREE_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.free++
 #define DKFW_STATS_RESOURCE_POOL_WANT_SUCCE_INCR(stat,id,core) (stat)->stat_items[id].stat_cores[core].resource_pool.want_succ++
