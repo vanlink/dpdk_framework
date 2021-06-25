@@ -222,7 +222,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         printf("offload DEV_TX_OFFLOAD_UDP_CKSUM\n");
         port_conf.txmode.offloads |= DEV_TX_OFFLOAD_UDP_CKSUM;
     }
-/*
+
     if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_IPV4_CKSUM) {
         printf("offload DEV_RX_OFFLOAD_IPV4_CKSUM\n");
         port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_IPV4_CKSUM;
@@ -237,7 +237,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         printf("offload DEV_RX_OFFLOAD_UDP_CKSUM\n");
         port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_UDP_CKSUM;
     }
-*/
+
     if(config->nic_hw_strip_vlan){
         if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_VLAN_STRIP) {
             printf("offload DEV_RX_OFFLOAD_VLAN_STRIP\n");
