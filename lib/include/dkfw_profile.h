@@ -35,18 +35,18 @@ extern cJSON *dkfw_profile_to_json(DKFW_PROFILE *profile);
 #define DKFW_PROFILE_END(profile,t) do { (profile)->all_time += ((t) - (profile)->tmp_start); } while(0)
 #endif
 
-#define DKFW_PROFILE_ITEM_START(profile,t,i) do { profile->tmp_items_start[i] = t; } while(0)
+#define DKFW_PROFILE_ITEM_START(profile,t,i) do { (profile)->tmp_items_start[i] = t; } while(0)
 #if DKFW_PROFILE_LOOP_CNT
-#define  DKFW_PROFILE_ITEM_END(profile,t,i) do { profile->items_time[i] += ((t) - profile->tmp_items_start[i]); profile->items_time_cnt[i]++; } while(0)
+#define  DKFW_PROFILE_ITEM_END(profile,t,i) do { (profile)->items_time[i] += ((t) - (profile)->tmp_items_start[i]); (profile)->items_time_cnt[i]++; } while(0)
 #else
-#define  DKFW_PROFILE_ITEM_END(profile,t,i) do { profile->items_time[i] += ((t) - profile->tmp_items_start[i]); } while(0)
+#define  DKFW_PROFILE_ITEM_END(profile,t,i) do { (profile)->items_time[i] += ((t) - (profile)->tmp_items_start[i]); } while(0)
 #endif
 
-#define DKFW_PROFILE_SINGLE_START(profile,t,i) do { profile->tmp_single_start[i] = t; } while(0)
+#define DKFW_PROFILE_SINGLE_START(profile,t,i) do { (profile)->tmp_single_start[i] = t; } while(0)
 #if DKFW_PROFILE_LOOP_CNT
-#define  DKFW_PROFILE_SINGLE_END(profile,t,i) do { profile->single_time[i] += ((t) - profile->tmp_single_start[i]); profile->single_time_cnt[i]++; } while(0)
+#define  DKFW_PROFILE_SINGLE_END(profile,t,i) do { (profile)->single_time[i] += ((t) - (profile)->tmp_single_start[i]); (profile)->single_time_cnt[i]++; } while(0)
 #else
-#define  DKFW_PROFILE_SINGLE_END(profile,t,i) do { profile->single_time[i] += ((t) - profile->tmp_single_start[i]); } while(0)
+#define  DKFW_PROFILE_SINGLE_END(profile,t,i) do { (profile)->single_time[i] += ((t) - (profile)->tmp_single_start[i]); } while(0)
 #endif
 
 #endif
