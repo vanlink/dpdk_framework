@@ -231,8 +231,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         }
         // 验证接收队列设置是否成功
         if(rte_eth_rx_queue_info_get(port_ind, i, &qinfo)){
-            printf("rte_eth_rx_queue_setup %d get info err.\n", i);
-            return -1;
+            printf("warning: rte_eth_rx_queue_setup %d get info err.\n", i);
         }
     }
 
@@ -250,8 +249,7 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
         }
         // 验证发送队列设置是否成功
         if(rte_eth_tx_queue_info_get(port_ind, i, &qinfo)){
-            printf("rte_eth_tx_queue_setup %d get info err.\n", i);
-            return -1;
+            printf("warning: rte_eth_tx_queue_setup %d get info err.\n", i);
         }
     }
 

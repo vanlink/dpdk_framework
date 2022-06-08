@@ -120,7 +120,7 @@ static int eal_init(DKFW_CONFIG *config)
 
     for(i=0;i<MAX_PCI_NUM;i++){
         if(config->pcis_config[i].pci_name[0]){
-            sprintf(dpdk_argv[argc], "--pci-whitelist=%s", config->pcis_config[i].pci_name);
+            sprintf(dpdk_argv[argc], "--allow=%s", config->pcis_config[i].pci_name);
             argc++;
         }
     }
