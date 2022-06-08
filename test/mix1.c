@@ -32,8 +32,6 @@ int main(int argc, char **argv)
 
     dkfw_config.process_type = PROCESS_TYPE_SECONDARY;
 
-    dkfw_config.alloc_mem = 256;
-
     dkfw_config.cores_pkt_process[0].core_enabled = 1;
     dkfw_config.cores_pkt_process[0].core_ind = 35;
     
