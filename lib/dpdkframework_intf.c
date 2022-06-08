@@ -42,23 +42,13 @@ static void check_port_link_status(int port_ind)
 
         // 检查并打印链路状态信息
         if (link.link_status) {
-            printf("Port Link Up - %u Mbps - %s\n", (unsigned)link.link_speed, (link.link_duplex == ETH_LINK_FULL_DUPLEX) ? ("full-duplex") : ("half-duplex\n"));
+            printf("Port Link Up - %u Mbps - %s\n", (unsigned)link.link_speed, (link.link_duplex == RTE_ETH_LINK_FULL_DUPLEX) ? ("full-duplex") : ("half-duplex\n"));
             return;
         }
     }
 
     printf("Port Link Down\n");
 }
-
-// 网卡对称rss哈希相关参数值
-#define RSS_HASH_KEY_LENGTH 40
-static uint8_t hash_key[RSS_HASH_KEY_LENGTH] = {
-        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-        0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A, 0x6D, 0x5A,
-};
 
 static int get_max_interface_rcv_pkt_len(int config_len)
 {
@@ -73,63 +63,6 @@ static int get_max_interface_rcv_pkt_len(int config_len)
     }else{
         return RTE_ETHER_MAX_LEN;
     }
-}
-
-static int sym_hash_enable(int port_id, uint32_t ftype, enum rte_eth_hash_function function)
-{
-    struct rte_eth_hash_filter_info info;
-    int ret = 0;
-    uint32_t idx = 0;
-    uint32_t offset = 0;
-
-    memset(&info, 0, sizeof(info));
-
-    ret = rte_eth_dev_filter_supported(port_id, RTE_ETH_FILTER_HASH);
-    if (ret < 0) {
-        printf("RTE_ETH_FILTER_HASH not supported on port: %d", port_id);
-        return ret;
-    }
-
-    info.info_type = RTE_ETH_HASH_FILTER_GLOBAL_CONFIG;
-    info.info.global_conf.hash_func = function;
-
-    idx = ftype / UINT64_BIT;
-    offset = ftype % UINT64_BIT;
-    info.info.global_conf.valid_bit_mask[idx] |= (1ULL << offset);
-    info.info.global_conf.sym_hash_enable_mask[idx] |= (1ULL << offset);
-
-    ret = rte_eth_dev_filter_ctrl(port_id, RTE_ETH_FILTER_HASH, RTE_ETH_FILTER_SET, &info);
-    if (ret < 0){
-        printf("Cannot set global hash configurations on port %u", port_id);
-        return ret;
-    }
-
-    return 0;
-}
-
-static int sym_hash_set(int port_id, int enable)
-{
-    int ret = 0;
-    struct rte_eth_hash_filter_info info;
-
-    memset(&info, 0, sizeof(info));
-
-    ret = rte_eth_dev_filter_supported(port_id, RTE_ETH_FILTER_HASH);
-    if (ret < 0) {
-        printf("RTE_ETH_FILTER_HASH not supported on port: %d", port_id);
-        return ret;
-    }
-
-    info.info_type = RTE_ETH_HASH_FILTER_SYM_HASH_ENA_PER_PORT;
-    info.info.enable = enable;
-    ret = rte_eth_dev_filter_ctrl(port_id, RTE_ETH_FILTER_HASH, RTE_ETH_FILTER_SET, &info);
-
-    if (ret < 0) {
-        printf("Cannot set symmetric hash enable per port on port %u", port_id);
-        return ret;
-    }
-
-    return 0;
 }
 
 /*
@@ -147,6 +80,8 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     uint16_t nb_txd;
     uint16_t nb_rxd;
     int port_ind = dkfw_intf->intf_seq;
+
+    (void)max_rx_pkt_len;
 
     printf("INIT intf %d ...\n", port_ind);
 
@@ -196,84 +131,62 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     // 开始设置网卡参数
     memset(&port_conf, 0, sizeof(port_conf));
 
-    // 最大接收包长
-    port_conf.rxmode.max_rx_pkt_len = max_rx_pkt_len;
-
-    printf("interface %d max_rx_pkt_len %d\n", port_ind, port_conf.rxmode.max_rx_pkt_len);
-
     // 网卡硬件快速释放特性
-    if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_MBUF_FAST_FREE){
+    if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE){
         printf("offload DEV_TX_OFFLOAD_MBUF_FAST_FREE\n");
-        port_conf.txmode.offloads |= DEV_TX_OFFLOAD_MBUF_FAST_FREE;
+        port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_MBUF_FAST_FREE;
     }
 
     // 网卡硬件发送ipv4检验和计算
-    if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_IPV4_CKSUM) {
+    if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_IPV4_CKSUM) {
         printf("offload DEV_TX_OFFLOAD_IPV4_CKSUM\n");
-        port_conf.txmode.offloads |= DEV_TX_OFFLOAD_IPV4_CKSUM;
+        port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_IPV4_CKSUM;
     }
     // 网卡硬件发送tcp检验和计算
-    if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_TCP_CKSUM) {
+    if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_TCP_CKSUM) {
         printf("offload DEV_TX_OFFLOAD_TCP_CKSUM\n");
-        port_conf.txmode.offloads |= DEV_TX_OFFLOAD_TCP_CKSUM;
+        port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_TCP_CKSUM;
     }
     // 网卡硬件发送udp检验和计算
-    if (dev_info.tx_offload_capa & DEV_TX_OFFLOAD_UDP_CKSUM) {
+    if (dev_info.tx_offload_capa & RTE_ETH_TX_OFFLOAD_UDP_CKSUM) {
         printf("offload DEV_TX_OFFLOAD_UDP_CKSUM\n");
-        port_conf.txmode.offloads |= DEV_TX_OFFLOAD_UDP_CKSUM;
+        port_conf.txmode.offloads |= RTE_ETH_TX_OFFLOAD_UDP_CKSUM;
     }
 
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_IPV4_CKSUM) {
+    if (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_IPV4_CKSUM) {
         printf("offload DEV_RX_OFFLOAD_IPV4_CKSUM\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_IPV4_CKSUM;
+        port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_IPV4_CKSUM;
     }
 
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_TCP_CKSUM) {
+    if (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_TCP_CKSUM) {
         printf("offload DEV_RX_OFFLOAD_TCP_CKSUM\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_TCP_CKSUM;
+        port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_TCP_CKSUM;
     }
 
-    if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_UDP_CKSUM) {
+    if (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_UDP_CKSUM) {
         printf("offload DEV_RX_OFFLOAD_UDP_CKSUM\n");
-        port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_UDP_CKSUM;
+        port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_UDP_CKSUM;
     }
 
     if(config->nic_hw_strip_vlan){
-        if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_VLAN_STRIP) {
+        if (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_VLAN_STRIP) {
             printf("offload DEV_RX_OFFLOAD_VLAN_STRIP\n");
-            port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_VLAN_STRIP;
+            port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_VLAN_STRIP;
         }
     }
 
     if(config->nic_hw_strip_qinq){
-        if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_QINQ_STRIP) {
+        if (dev_info.rx_offload_capa & RTE_ETH_RX_OFFLOAD_QINQ_STRIP) {
             printf("offload DEV_RX_OFFLOAD_QINQ_STRIP\n");
-            port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_QINQ_STRIP;
-        }
-    }
-
-    if(port_conf.rxmode.max_rx_pkt_len > RTE_ETHER_MAX_LEN){
-        if (dev_info.rx_offload_capa & DEV_RX_OFFLOAD_JUMBO_FRAME) {
-            printf("offload DEV_RX_OFFLOAD_JUMBO_FRAME\n");
-            port_conf.rxmode.offloads |= DEV_RX_OFFLOAD_JUMBO_FRAME;
+            port_conf.rxmode.offloads |= RTE_ETH_RX_OFFLOAD_QINQ_STRIP;
         }
     }
 
     // 设置对称RSS队列
     // 可使一条流的两个方向的包，始终分配到同一个rss队列
     if(rxq_num > 1){
-        port_conf.rxmode.mq_mode = ETH_MQ_RX_RSS;
-        port_conf.rx_adv_conf.rss_conf.rss_hf = (ETH_RSS_IP | ETH_RSS_TCP | ETH_RSS_UDP) & dev_info.flow_type_rss_offloads;
-
-        if(config->nic_symmetric_rss_enable){
-            if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
-                printf("Set Symmetric RSS for 40G netcard step 1.\n");
-            }else{
-                printf("Set Symmetric RSS for 10G netcard.\n");
-                port_conf.rx_adv_conf.rss_conf.rss_key = hash_key;
-                port_conf.rx_adv_conf.rss_conf.rss_key_len = RSS_HASH_KEY_LENGTH;
-            }
-        }
+        port_conf.rxmode.mq_mode = RTE_ETH_MQ_RX_RSS;
+        port_conf.rx_adv_conf.rss_conf.rss_hf = (RTE_ETH_RSS_IP | RTE_ETH_RSS_TCP | RTE_ETH_RSS_UDP) & dev_info.flow_type_rss_offloads;
     }
 
     if(config->nic_promiscuous_enable){
@@ -293,21 +206,6 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     if (ret) {
         printf("rte_eth_dev_configure err\n");
         return -1;
-    }
-
-    if((rxq_num > 1) && config->nic_symmetric_rss_enable){
-        if(dkfw_intf->nic_type == NETCARD_TYPE_I40E){
-            printf("Set Symmetric RSS for 40G netcard step 2.\n");
-            if(sym_hash_enable(port_ind, RTE_ETH_FLOW_NONFRAG_IPV4_TCP, RTE_ETH_HASH_FUNCTION_TOEPLITZ) < 0){
-                return -1;
-            }
-            if(sym_hash_enable(port_ind, RTE_ETH_FLOW_NONFRAG_IPV4_UDP, RTE_ETH_HASH_FUNCTION_TOEPLITZ) < 0){
-                return -1;
-            }
-            if(sym_hash_set(port_ind, 1) < 0){
-                return -1;
-            }
-        }
     }
 
     // 设置网卡发送和接收描述符的数量为最大

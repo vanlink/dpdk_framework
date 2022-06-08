@@ -326,7 +326,7 @@ int dkfw_start_loop_raw(void *loop_arg)
         return -1;
     }
 
-    rte_eal_mp_remote_launch(g_core_me->core_func_raw, loop_arg, CALL_MASTER);
+    rte_eal_mp_remote_launch(g_core_me->core_func_raw, loop_arg, CALL_MAIN);
     rte_eal_mp_wait_lcore();
 
     return 0;
