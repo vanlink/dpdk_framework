@@ -17,6 +17,8 @@ sudo yum -y install gcc libpcap-devel pcre-devel libyaml-devel file-devel \
   zlib-devel jansson-devel nss-devel libcap-ng-devel libnet-devel tar make \
   libnetfilter_queue-devel lua-devel PyYAML libmaxminddb-devel rustc cargo \
   lz4-devel
+
+dnf --enablerepo=PowerTools install ninja-build
 ```
 
 # 修改grub
