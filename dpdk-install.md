@@ -79,10 +79,10 @@ systemctl start smb.service
 mount -t hugetlbfs nodev /mnt/huge
 echo 0 > /proc/sys/kernel/randomize_va_space
 
-modprobe uio
+modprobe uio_pci_generic
 
-insmod ${RTE_SDK}/${RTE_TARGET}/kmod/igb_uio.ko
-insmod ${RTE_SDK}/${RTE_TARGET}/kmod/rte_kni.ko
+# insmod ${RTE_SDK}/${RTE_TARGET}/kmod/igb_uio.ko
+# insmod ${RTE_SDK}/${RTE_TARGET}/kmod/rte_kni.ko
 
 python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.0
 python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.1
