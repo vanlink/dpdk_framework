@@ -52,8 +52,11 @@ if (1) ...
 export EXTRA_CFLAGS=-fPIC
 ```
 ## 正式编译
-略
 
+使用ninja-build编译后：
+```shell
+export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
+```
 # 快捷方式
 cat prompt.sh
 ```shell
