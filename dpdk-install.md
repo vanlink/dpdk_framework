@@ -57,6 +57,18 @@ export EXTRA_CFLAGS=-fPIC
 ```shell
 export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
 ```
+
+在 /etc/ld.so.conf.d/ 中创建 dpdk.conf 文件，内容
+```shell
+/usr/local/lib64
+```
+
+之后执行
+```shell
+ldconfig
+ldconfig -p | grep librte
+```
+确认生效
 # 快捷方式
 cat prompt.sh
 ```shell
