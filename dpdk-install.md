@@ -1,9 +1,3 @@
-# 关闭防火墙
-```shell
-systemctl stop firewalld.service
-systemctl disable firewalld.service
-```
-
 # 安装编译工具
 ```shell
 dnf update --nobest
@@ -72,35 +66,28 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 ```shell
 modprobe vfio-pci
 ```
+之后可绑定dpdk网卡
 # 快捷方式
+
 cat prompt.sh
 ```shell
 #!/bin/bash
 export PS1="\[\e[1m\]\[\e[32m\][\w]# \[\e[m"
-```
-/usr/src/dpdkenv.sh
-```shell
-export RTE_SDK=/usr/src/dpdk-19.11
-export RTE_TARGET=x86_64-native-linuxapp-gcc
-export DKFW_SDK=/usr/src/dpdk-frame-new
-export NTA_SDK=/usr/src/kafka_api_demo
 ```
 
 /usr/src/dpdksetup.sh
 ```shell
 service iptables stop
 systemctl stop iptables.service
-systemctl start smb.service
+systemctl stop firewalld.service
+systemctl disable firewalld.service
 mount -t hugetlbfs nodev /mnt/huge
 echo 0 > /proc/sys/kernel/randomize_va_space
 
-modprobe uio_pci_generic
+modprobe vfio-pci
 
-# insmod ${RTE_SDK}/${RTE_TARGET}/kmod/igb_uio.ko
-# insmod ${RTE_SDK}/${RTE_TARGET}/kmod/rte_kni.ko
-
-python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.0
-python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=igb_uio 0000:01:00.1
+python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=vfio-pci 0000:01:00.0
+python ${RTE_SDK}/usertools/dpdk-devbind.py --bind=vfio-pci 0000:01:00.1
 
 python ${RTE_SDK}/usertools/dpdk-devbind.py --status
 ```
