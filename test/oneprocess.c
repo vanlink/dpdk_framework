@@ -45,7 +45,8 @@ int main(int argc, char **argv)
     dkfw_config.cores_pkt_dispatch[0].core_enabled = 1;
     dkfw_config.cores_pkt_dispatch[0].core_ind = 3;
 
-    strcpy(dkfw_config.pcis_config[0].pci_name, "0000:02:02.0");
+    strcpy(dkfw_config.pcis_config[0].pci_name, "0000:0b:00.0");
+    strcpy(dkfw_config.pcis_config[1].pci_name, "0000:1b:00.0");
     
     if(dkfw_init(&dkfw_config) < 0){
         return -1;
