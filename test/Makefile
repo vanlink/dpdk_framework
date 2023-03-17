@@ -1,9 +1,11 @@
 PKGCONF=pkg-config
-DKFW_SDK=../lib
-DPDK_CFLAGS=-Wall $(shell $(PKGCONF) --cflags libdpdk) -I/usr/local/include -I../lib/include
+DPDK_CFLAGS=-Wall $(shell $(PKGCONF) --cflags libdpdk) -I/usr/local/include -I${DKFW_SDK}/include
 DPDK_LDFLAGS=$(shell $(PKGCONF) --libs libdpdk) -lrt -lm -ldl -lcrypto -pthread -lnuma -fpic
 
-all: app0 app1 distr0 mix0 mix1 oneprocess
+all: guard-DKFW_SDK app0 app1 distr0 mix0 mix1 oneprocess
+
+guard-%:
+	@ if [ "${${*}}" = "" ]; then echo "Environment variable $* not set"; exit 1; fi
 
 oneprocess:
 	gcc -g -O2 ${DPDK_CFLAGS} oneprocess.c ${DKFW_SDK}/libdkfw.a ${DPDK_LDFLAGS} -o test-oneprocess
