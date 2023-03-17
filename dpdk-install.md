@@ -74,6 +74,9 @@ cat prompt.sh
 #!/bin/bash
 export PS1="\[\e[1m\]\[\e[32m\][\w]# \[\e[m"
 ```
+```shell
+echo 'export PS1="\[\e[1m\]\[\e[32m\][\w]# \[\e[m"' > /etc/profile.d/promptfullpath.sh
+```
 
 /usr/src/dpdksetup.sh
 ```shell
