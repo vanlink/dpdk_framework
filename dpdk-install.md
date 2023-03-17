@@ -9,7 +9,8 @@ systemctl disable firewalld.service
 dnf update --nobest
 dnf install pkg-config
 dnf groupinstall "Development Tools"
-dnf --enablerepo=PowerTools install pciutils openssl-devel bc numactl numactl-devel python3 libpcap-devel samba lrzsz vim meson ninja-build
+dnf --enablerepo=PowerTools install pciutils openssl-devel bc numactl numactl-devel \ 
+                                    python3 libpcap-devel samba lrzsz vim meson ninja-build
 pip3 install pyelftools
 dnf install epel-release
 dnf --enablerepo=PowerTools install cjson cjson-devel
@@ -54,6 +55,23 @@ ldconfig
 ldconfig -p | grep librte
 ```
 
+## 开启IOMMU
+BIOS开启虚拟化iommu
+
+grub添加：
+```shell
+iommu=pt intel_iommu=on
+```
+之后执行
+```shell
+grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+重启
+
+执行
+```shell
+modprobe vfio-pci
+```
 # 快捷方式
 cat prompt.sh
 ```shell
