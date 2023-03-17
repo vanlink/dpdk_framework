@@ -3,22 +3,16 @@
 systemctl stop firewalld.service
 systemctl disable firewalld.service
 ```
-# 关闭 selinux
-略
 
 # 安装编译工具
 ```shell
-yum -y update
-yum groupinstall "Development Tools"
-yum install -y pciutils gcc openssl-devel bc numactl numactl-devel python libpcap-devel samba lrzsz vim meson ninja-build
-
-yum install epel-release
-sudo yum -y install gcc libpcap-devel pcre-devel libyaml-devel file-devel \
-  zlib-devel jansson-devel nss-devel libcap-ng-devel libnet-devel tar make \
-  libnetfilter_queue-devel lua-devel PyYAML libmaxminddb-devel rustc cargo \
-  lz4-devel
-
-dnf --enablerepo=PowerTools install ninja-build
+dnf update --nobest
+dnf install pkg-config
+dnf groupinstall "Development Tools"
+dnf --enablerepo=PowerTools install pciutils openssl-devel bc numactl numactl-devel python3 libpcap-devel samba lrzsz vim meson ninja-build
+pip3 install pyelftools
+dnf install epel-release
+dnf --enablerepo=PowerTools install cjson cjson-devel
 ```
 
 # 修改grub
@@ -38,37 +32,28 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 yum install -y kernel-devel-$(uname -r)
 ```
 # 编译安装 DPDK
-## 虚拟机e1000网卡
-如果使用虚拟机e1000网卡，进行以下修改：
 
-igb_uio.c 文件：
-```shell
-if (pci_intx_mask_supported(dev)) ...
-改为
-if (1) ...
-```
 ## 设置fpic
 ```shell
 export EXTRA_CFLAGS=-fPIC
 ```
 ## 正式编译
 
-使用ninja-build编译后：
+```shell
+meson setup build
+cd build
+ninja
+ninja install
+```
+
+编译后：
 ```shell
 export PKG_CONFIG_PATH=/usr/local/lib64/pkgconfig
-```
-
-在 /etc/ld.so.conf.d/ 中创建 dpdk.conf 文件，内容
-```shell
-/usr/local/lib64
-```
-
-之后执行
-```shell
+echo "/usr/local/lib64" > /etc/ld.so.conf.d/dpdk.conf
 ldconfig
 ldconfig -p | grep librte
 ```
-确认生效
+
 # 快捷方式
 cat prompt.sh
 ```shell
