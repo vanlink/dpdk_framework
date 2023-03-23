@@ -69,7 +69,7 @@ static int get_max_interface_rcv_pkt_len(int config_len)
     初始化一个网卡
     返回0成功，其他失败
 */
-static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq_num, int rxq_num, int max_rx_pkt_len)
+static int interfaces_init_one(PCI_CONFIG *config, int checklink, DKFW_INTF *dkfw_intf, int txq_num, int rxq_num, int max_rx_pkt_len)
 {
     int ret, i;
     struct rte_eth_dev_info dev_info;
@@ -257,8 +257,11 @@ static int interfaces_init_one(PCI_CONFIG *config, DKFW_INTF *dkfw_intf, int txq
     rte_eth_led_on(port_ind);
     // 使能网卡，链路UP
     rte_eth_dev_set_link_up(port_ind);
-    // 检测链路up状态
-    check_port_link_status(port_ind);
+
+    if(checklink){
+        // 检测链路up状态
+        check_port_link_status(port_ind);
+    }
 
     // 开始收包
     ret = rte_eth_dev_start(port_ind);
@@ -324,7 +327,7 @@ int interfaces_init(DKFW_CONFIG *config, int txq_num, int rxq_num)
     // 逐个初始化网卡
     for(i=0;i<g_dkfw_interfaces_num;i++){
         g_dkfw_interfaces[i].intf_seq = i;
-        if(interfaces_init_one(&config->pcis_config[i], &g_dkfw_interfaces[i], txq_num, rxq_num, config_pkt_len) < 0){
+        if(interfaces_init_one(&config->pcis_config[i], config->check_interface_st, &g_dkfw_interfaces[i], txq_num, rxq_num, config_pkt_len) < 0){
             return -1;
         }
     }

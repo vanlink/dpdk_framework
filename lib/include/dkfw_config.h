@@ -61,6 +61,8 @@ typedef struct _DKFW_CONFIG_TAG {
 
     int number_of_channels;     //    -n <number of channels>  Set the number of memory channels to use.
 
+    int check_interface_st;    // check interface link status while init
+
     char socket_limit[64];     // --socket-limit <amounts of memory per socket>
                                //Place a per-socket upper limit on memory use (non-legacy memory mode only). 0 will disable the limit for a particular socket.
 
