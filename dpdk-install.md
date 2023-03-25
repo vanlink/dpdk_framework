@@ -1,5 +1,6 @@
 # 安装编译工具
 ```shell
+dnf update rpm
 dnf update --nobest
 dnf install pkg-config
 dnf groupinstall "Development Tools"
