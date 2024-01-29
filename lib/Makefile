@@ -2,8 +2,8 @@ PKGCONF=pkg-config
 
 LIBNAME=libdkfw.a
 
-LIBS=$(shell $(PKGCONF) --libs libdpdk) -lrt -lm -ldl -lcrypto -pthread -lnuma -lcjson -fpic
-INCLUDE=-I. -I/usr/include -I/usr/local/include -I./include
+# LIBS=$(shell $(PKGCONF) --libs libdpdk) -lrt -lm -ldl -lcrypto -pthread -lnuma -lcjson -fpic
+INCLUDE= -I./include
 DEPS=-Wall -Wextra $(shell $(PKGCONF) --cflags libdpdk) -DALLOW_EXPERIMENTAL_API
 
 ifeq ($(D),1)
